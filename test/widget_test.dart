@@ -1,11 +1,13 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:pbs_pawsitivecode/main.dart';
+import 'package:pbs_pawsitivecode/core/auth/auth_state.dart';
 import 'package:pbs_pawsitivecode/core/router/app_router.dart';
 import 'package:pbs_pawsitivecode/core/theme/app_theme.dart';
 import 'package:pbs_pawsitivecode/features/auth/admin_auth_screen.dart';
+import 'package:pbs_pawsitivecode/features/auth/customer_auth_screen.dart';
 import 'package:pbs_pawsitivecode/features/auth/role_selection_screen.dart';
 import 'package:pbs_pawsitivecode/features/admin/admin_bookings_screen.dart';
 import 'package:pbs_pawsitivecode/features/admin/admin_customers_screen.dart';
@@ -19,11 +21,16 @@ import 'package:pbs_pawsitivecode/features/customer/customer_profile_screen.dart
 import 'package:pbs_pawsitivecode/features/customer/customer_app_shell.dart';
 import 'package:pbs_pawsitivecode/theme/design_tokens.dart';
 
+AuthState signedInAdmin() => AuthState()..signInAs(AuthRole.admin);
+AuthState signedInCustomer() => AuthState()..signInAs(AuthRole.customer);
+
 Future<void> pumpAppRouter(
   WidgetTester tester, {
   String initialLocation = '/',
+  AuthState? auth,
 }) async {
-  final router = createAppRouter(initialLocation: initialLocation);
+  final authState = auth ?? AuthState();
+  final router = createAppRouter(authState, initialLocation: initialLocation);
   addTearDown(router.dispose);
   await tester.pumpWidget(
     MaterialApp.router(theme: AppTheme.dark, routerConfig: router),
@@ -70,7 +77,24 @@ void main() {
     expect(find.byType(NavigationBar), findsOneWidget);
   });
 
-  testWidgets('customer role routes to the customer flow', (tester) async {
+  testWidgets('admin pages redirect to admin login when signed out', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpAppRouter(tester, initialLocation: '/admin/dashboard');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AdminDashboardScreen), findsNothing);
+    expect(find.byType(AdminAuthScreen), findsOneWidget);
+  });
+
+  testWidgets('customer role goes straight to home without login', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -80,18 +104,22 @@ void main() {
     await tester.tap(find.text('Customer'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Welcome back!'), findsOneWidget);
-    await tester.enterText(
-      find.byType(TextFormField).at(0),
-      'customer@example.com',
-    );
-    await tester.enterText(find.byType(TextFormField).at(1), 'password123');
-    await tester.ensureVisible(find.text('Login'));
-    await tester.tap(find.text('Login'));
+    expect(find.byType(CustomerHomeScreen), findsOneWidget);
+    expect(find.text('Welcome back!'), findsNothing);
+    expect(find.byType(NavigationBar), findsOneWidget);
+  });
+
+  testWidgets('booking asks guests to sign in first', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpAppRouter(tester, initialLocation: '/customer/booking');
     await tester.pumpAndSettle();
 
-    expect(find.byType(CustomerHomeScreen), findsOneWidget);
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(CustomerBookingScreen), findsNothing);
+    expect(find.byType(CustomerAuthScreen), findsOneWidget);
   });
 
   testWidgets('sign in shows credentials, remember option, and mode toggle', (
@@ -272,7 +300,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAppRouter(tester, initialLocation: '/admin/dashboard');
+    await pumpAppRouter(
+      tester,
+      initialLocation: '/admin/dashboard',
+      auth: signedInAdmin(),
+    );
 
     await tester.tap(find.text('Booking').last);
     await tester.pumpAndSettle();
@@ -334,7 +366,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAppRouter(tester, initialLocation: '/admin/dashboard');
+    await pumpAppRouter(
+      tester,
+      initialLocation: '/admin/dashboard',
+      auth: signedInAdmin(),
+    );
 
     await tester.tap(find.text('Customer').last);
     await tester.pumpAndSettle();
@@ -407,7 +443,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAppRouter(tester, initialLocation: '/admin/dashboard');
+    await pumpAppRouter(
+      tester,
+      initialLocation: '/admin/dashboard',
+      auth: signedInAdmin(),
+    );
 
     await tester.tap(find.text('Reviews').last);
     await tester.pumpAndSettle();
@@ -457,7 +497,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAppRouter(tester, initialLocation: '/admin/dashboard');
+    await pumpAppRouter(
+      tester,
+      initialLocation: '/admin/dashboard',
+      auth: signedInAdmin(),
+    );
 
     await tester.tap(find.text('Setting').last);
     await tester.pumpAndSettle();
@@ -473,7 +517,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAppRouter(tester, initialLocation: '/admin/dashboard');
+    await pumpAppRouter(
+      tester,
+      initialLocation: '/admin/dashboard',
+      auth: signedInAdmin(),
+    );
 
     expect(find.byType(AdminDashboardScreen), findsOneWidget);
     expect(find.byType(NavigationBar), findsOneWidget);
@@ -527,7 +575,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAppRouter(tester, initialLocation: '/customer/booking');
+    await pumpAppRouter(
+      tester,
+      initialLocation: '/customer/booking',
+      auth: signedInCustomer(),
+    );
 
     expect(find.byType(CustomerBookingScreen), findsOneWidget);
     await tester.drag(find.byType(ListView).first, const Offset(0, -500));
@@ -597,7 +649,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAppRouter(tester, initialLocation: '/admin/settings');
+    await pumpAppRouter(
+      tester,
+      initialLocation: '/admin/settings',
+      auth: signedInAdmin(),
+    );
 
     final backButton = find.byTooltip('Back');
     final backMouseRegion = find
@@ -619,7 +675,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await pumpAppRouter(tester, initialLocation: '/customer/booking');
+    await pumpAppRouter(
+      tester,
+      initialLocation: '/customer/booking',
+      auth: signedInCustomer(),
+    );
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
