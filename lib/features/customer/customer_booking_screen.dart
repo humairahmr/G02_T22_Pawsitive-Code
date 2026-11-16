@@ -202,7 +202,7 @@ class _BookingStep extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 20,
-          backgroundColor: const Color.fromARGB(255, 255, 0, 149),
+          backgroundColor: DesignTokens.studioYellow,
           foregroundColor: DesignTokens.cardText,
           child: Text(
             '$number',
