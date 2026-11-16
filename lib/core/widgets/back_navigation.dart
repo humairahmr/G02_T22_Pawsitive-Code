@@ -55,17 +55,13 @@ class ScreenHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        AppBackButton(
-          fallbackLocation: fallbackLocation,
-          onPressed: onBack,
-        ),
+        AppBackButton(fallbackLocation: fallbackLocation, onPressed: onBack),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             title,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineMedium?.copyWith(fontSize: 36),
+            style: Theme.of(context).textTheme.headlineMedium
+                ?.copyWith(fontSize: 36),
           ),
         ),
       ],

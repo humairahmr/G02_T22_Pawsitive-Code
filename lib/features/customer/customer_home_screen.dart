@@ -139,7 +139,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    for (var index = 0; index < _categories.length; index++) ...[
+                    for (
+                      var index = 0;
+                      index < _categories.length;
+                      index++
+                    ) ...[
                       if (index > 0) const SizedBox(width: 12),
                       Expanded(
                         child: _PhotoCategoryCard(
@@ -220,10 +224,8 @@ class _PromotionCarouselCard extends StatelessWidget {
                 ),
                 child: Text(
                   title,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Colors.white,
-                    letterSpacing: 1.4,
-                  ),
+                  style: Theme.of(context).textTheme.labelLarge
+                      ?.copyWith(color: Colors.white, letterSpacing: 1.4),
                 ),
               ),
             ),
@@ -320,17 +322,14 @@ class _MiniPortraitBanner extends StatelessWidget {
               children: [
                 Text(
                   'Mini portrait weekend',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: DesignTokens.cardText,
-                    fontSize: 22,
-                  ),
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(color: DesignTokens.cardText, fontSize: 22),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '15 - 27 Nov 2026',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: DesignTokens.cardText,
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: DesignTokens.cardText),
                 ),
               ],
             ),

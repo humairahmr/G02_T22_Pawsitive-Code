@@ -66,24 +66,19 @@ class AdminDashboardScreen extends StatelessWidget {
                 const SizedBox(height: 32),
                 Text(
                   'Needs attention',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontSize: 30,
-                  ),
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontSize: 30),
                 ),
                 const SizedBox(height: 14),
                 _PaymentAlert(onTap: onPaymentReviewTap),
                 const SizedBox(height: 32),
                 Text(
                   'Today’s schedule',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontSize: 30,
-                  ),
+                  style: Theme.of(context).textTheme.titleLarge
+                      ?.copyWith(fontSize: 30),
                 ),
                 const SizedBox(height: 14),
-                _TodaySchedule(
-                  schedule: _schedule,
-                  onTap: onScheduleTap,
-                ),
+                _TodaySchedule(schedule: _schedule, onTap: onScheduleTap),
               ],
             ),
           ),
@@ -94,10 +89,7 @@ class AdminDashboardScreen extends StatelessWidget {
 }
 
 class _DashboardHeader extends StatelessWidget {
-  const _DashboardHeader({
-    required this.username,
-    required this.avatarLetter,
-  });
+  const _DashboardHeader({required this.username, required this.avatarLetter});
 
   final String username;
   final String avatarLetter;
@@ -112,16 +104,13 @@ class _DashboardHeader extends StatelessWidget {
             children: [
               Text(
                 'Good morning, $username!',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: 17,
-                  color: Colors.white,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(fontSize: 17, color: Colors.white),
               ),
               Text(
                 'Dashboard',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontSize: 38,
-                ),
+                style: Theme.of(context).textTheme.headlineMedium
+                    ?.copyWith(fontSize: 38),
               ),
             ],
           ),
@@ -159,9 +148,7 @@ class _MetricsGrid extends StatelessWidget {
             : 2;
         const spacing = 16.0;
         final tileWidth = (width - spacing * (columns - 1)) / columns;
-        final revenueWidth = width < 560
-            ? width
-            : tileWidth * 2 + spacing;
+        final revenueWidth = width < 560 ? width : tileWidth * 2 + spacing;
 
         return Wrap(
           spacing: spacing,
@@ -245,10 +232,8 @@ class _MetricTile extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: DesignTokens.cardText,
-                  fontSize: 15,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: DesignTokens.cardText, fontSize: 15),
               ),
             ],
           ),
@@ -296,9 +281,8 @@ class _PaymentAlert extends StatelessWidget {
                     SizedBox(height: 4),
                     Text(
                       '3 payments need review',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: DesignTokens.cardText,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(color: DesignTokens.cardText),
                     ),
                   ],
                 ),
@@ -372,9 +356,8 @@ class _ScheduleRow extends StatelessWidget {
             padding: const EdgeInsets.only(top: 5),
             child: Text(
               item.time,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: DesignTokens.cardText,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: DesignTokens.cardText),
             ),
           ),
         ),
@@ -393,9 +376,8 @@ class _ScheduleRow extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 item.client,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF757575),
-                ),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: const Color(0xFF757575)),
               ),
             ],
           ),

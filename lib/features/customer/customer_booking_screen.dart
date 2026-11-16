@@ -159,7 +159,9 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Selected ${_formatDate(date)} for your booking.')),
+      SnackBar(
+        content: Text('Selected ${_formatDate(date)} for your booking.'),
+      ),
     );
   }
 
@@ -204,10 +206,8 @@ class _BookingStep extends StatelessWidget {
           foregroundColor: DesignTokens.cardText,
           child: Text(
             '$number',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: DesignTokens.cardText,
-              fontSize: 22,
-            ),
+            style: Theme.of(context).textTheme.titleLarge
+                ?.copyWith(color: DesignTokens.cardText, fontSize: 22),
           ),
         ),
         const SizedBox(width: 12),
@@ -217,9 +217,8 @@ class _BookingStep extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontSize: 20,
-                ),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontSize: 20),
               ),
               const SizedBox(height: 8),
               child,
@@ -266,10 +265,7 @@ class _BookingChoiceChip extends StatelessWidget {
 }
 
 class _AiDayFinderCard extends StatelessWidget {
-  const _AiDayFinderCard({
-    required this.sessionType,
-    required this.timeOfDay,
-  });
+  const _AiDayFinderCard({required this.sessionType, required this.timeOfDay});
 
   final String sessionType;
   final String timeOfDay;
@@ -295,10 +291,8 @@ class _AiDayFinderCard extends StatelessWidget {
             children: [
               Text(
                 'AI day finder',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
-                  fontSize: 20,
-                ),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(color: Colors.white, fontSize: 20),
               ),
               const SizedBox(width: 10),
               const Icon(
@@ -311,10 +305,8 @@ class _AiDayFinderCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text.rich(
             TextSpan(
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.white,
-                height: 1.5,
-              ),
+              style: Theme.of(context).textTheme.bodyLarge
+                  ?.copyWith(color: Colors.white, height: 1.5),
               children: [
                 const TextSpan(text: 'Best day for your '),
                 TextSpan(
@@ -368,10 +360,8 @@ class _BookingConfirmationBar extends StatelessWidget {
                 children: [
                   Text(
                     'Your booking',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: DesignTokens.cardText,
-                      fontSize: 20,
-                    ),
+                    style: Theme.of(context).textTheme.titleLarge
+                        ?.copyWith(color: DesignTokens.cardText, fontSize: 20),
                   ),
                   const SizedBox(height: 4),
                   Text(

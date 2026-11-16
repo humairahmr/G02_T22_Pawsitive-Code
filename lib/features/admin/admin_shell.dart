@@ -4,11 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../theme/design_tokens.dart';
 
 class AdminAppShell extends StatelessWidget {
-  const AdminAppShell({
-    super.key,
-    required this.location,
-    required this.child,
-  });
+  const AdminAppShell({super.key, required this.location, required this.child});
 
   final String location;
   final Widget child;
@@ -24,11 +20,7 @@ class AdminAppShell extends StatelessWidget {
       Icons.calendar_month_outlined,
       '/admin/bookings',
     ),
-    _DashboardDestination(
-      'Customer',
-      Icons.people_outline,
-      '/admin/customers',
-    ),
+    _DashboardDestination('Customer', Icons.people_outline, '/admin/customers'),
     _DashboardDestination('Reviews', Icons.star_border, '/admin/reviews'),
     _DashboardDestination('Setting', Icons.tune, '/admin/settings'),
   ];
