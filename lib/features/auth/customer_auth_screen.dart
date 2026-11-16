@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 class CustomerAuthScreen extends StatefulWidget {
   const CustomerAuthScreen({super.key, required this.onSubmit, this.onBack});
@@ -131,11 +131,12 @@ class _CustomerAuthScreenState extends State<CustomerAuthScreen> {
                         labelText: 'Password',
                         hintText: 'Enter your password',
                         suffixIcon: IconButton(
-                          icon: Icon(_obscure
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined),
-                          onPressed: () =>
-                              setState(() => _obscure = !_obscure),
+                          icon: Icon(
+                            _obscure
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                          ),
+                          onPressed: () => setState(() => _obscure = !_obscure),
                         ),
                       ),
                       validator: (v) => (v == null || v.length < 6)

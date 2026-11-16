@@ -388,18 +388,14 @@ class _ReviewCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               '${review.session} - ${review.date}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: const Color(0xFF858585),
-                fontSize: 14,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: const Color(0xFF858585), fontSize: 14),
             ),
             const SizedBox(height: 14),
             Text(
               '"${review.review}"',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: DesignTokens.cardText,
-                height: 1.4,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: DesignTokens.cardText, height: 1.4),
             ),
             if (hasReply) ...[
               const SizedBox(height: 12),
@@ -449,10 +445,8 @@ class _ReviewCard extends StatelessWidget {
                 );
                 final profileLabel = Text(
                   'Show on public profile',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF858585),
-                    fontSize: 13,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: const Color(0xFF858585), fontSize: 13),
                 );
 
                 if (constraints.maxWidth < 440) {

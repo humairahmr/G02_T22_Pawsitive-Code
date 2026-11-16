@@ -48,7 +48,9 @@ class CustomerAppShell extends StatelessWidget {
                 ),
                 selectedLabelTextStyle: Theme.of(context).textTheme.labelMedium
                     ?.copyWith(color: DesignTokens.cardText),
-                unselectedLabelTextStyle: Theme.of(context).textTheme.labelMedium
+                unselectedLabelTextStyle: Theme.of(context)
+                    .textTheme
+                    .labelMedium
                     ?.copyWith(color: const Color(0xFFB0B0B0)),
                 onDestinationSelected: (index) {
                   context.go(_destinations[index].path);

@@ -109,10 +109,7 @@ class _CustomerCalendarState extends State<CustomerCalendar> {
                     color: const Color(0xFFD8D8D8),
                     label: 'Fully booked',
                   ),
-                  _LegendItem(
-                    color: DesignTokens.studioYellow,
-                    label: 'Today',
-                  ),
+                  _LegendItem(color: DesignTokens.studioYellow, label: 'Today'),
                   _LegendItem(
                     color: DesignTokens.confirmedGreen,
                     label: 'AI pick',
@@ -272,10 +269,8 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: DesignTokens.cardText,
-            fontSize: 12,
-          ),
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(color: DesignTokens.cardText, fontSize: 12),
         ),
       ],
     );

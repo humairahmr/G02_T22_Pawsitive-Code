@@ -24,42 +24,30 @@ class CustomerExploreScreen extends StatefulWidget {
 class _CustomerExploreScreenState extends State<CustomerExploreScreen> {
   static const _filters = ['ALL', 'Wedding', 'Event', 'Graduation'];
   static const _styles = [
-    _ExploreStyle(
-      'Golden hour',
-      'Wedding',
-      Icons.favorite_outline,
-      [Color(0xFFBE9277), Color(0xFF574139)],
-    ),
-    _ExploreStyle(
-      'The big day',
-      'Wedding',
-      Icons.camera_alt_outlined,
-      [Color(0xFF879078), Color(0xFF3E4B3D)],
-    ),
-    _ExploreStyle(
-      'Celebrate together',
-      'Event',
-      Icons.celebration_outlined,
-      [Color(0xFF81728F), Color(0xFF43394E)],
-    ),
-    _ExploreStyle(
-      'A new chapter',
-      'Graduation',
-      Icons.school_outlined,
-      [Color(0xFF7794A0), Color(0xFF394E59)],
-    ),
-    _ExploreStyle(
-      'Quiet moments',
-      'Event',
-      Icons.auto_awesome_outlined,
-      [Color(0xFF9A8870), Color(0xFF51473C)],
-    ),
-    _ExploreStyle(
-      'Classic portrait',
-      'Wedding',
-      Icons.portrait_outlined,
-      [Color(0xFF92727A), Color(0xFF4C3940)],
-    ),
+    _ExploreStyle('Golden hour', 'Wedding', Icons.favorite_outline, [
+      Color(0xFFBE9277),
+      Color(0xFF574139),
+    ]),
+    _ExploreStyle('The big day', 'Wedding', Icons.camera_alt_outlined, [
+      Color(0xFF879078),
+      Color(0xFF3E4B3D),
+    ]),
+    _ExploreStyle('Celebrate together', 'Event', Icons.celebration_outlined, [
+      Color(0xFF81728F),
+      Color(0xFF43394E),
+    ]),
+    _ExploreStyle('A new chapter', 'Graduation', Icons.school_outlined, [
+      Color(0xFF7794A0),
+      Color(0xFF394E59),
+    ]),
+    _ExploreStyle('Quiet moments', 'Event', Icons.auto_awesome_outlined, [
+      Color(0xFF9A8870),
+      Color(0xFF51473C),
+    ]),
+    _ExploreStyle('Classic portrait', 'Wedding', Icons.portrait_outlined, [
+      Color(0xFF92727A),
+      Color(0xFF4C3940),
+    ]),
   ];
 
   final _searchController = TextEditingController();
@@ -149,9 +137,11 @@ class _CustomerExploreScreenState extends State<CustomerExploreScreen> {
                         columnCount,
                         (_) => <Widget>[],
                       );
-                      for (var index = 0;
-                          index < visibleStyles.length;
-                          index++) {
+                      for (
+                        var index = 0;
+                        index < visibleStyles.length;
+                        index++
+                      ) {
                         final style = visibleStyles[index];
                         columns[index % columnCount].add(
                           Padding(
@@ -224,14 +214,12 @@ class _ExploreSearchBar extends StatelessWidget {
               child: TextField(
                 controller: controller,
                 onChanged: onChanged,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: DesignTokens.cardText,
-                ),
+                style: Theme.of(context).textTheme.bodyLarge
+                    ?.copyWith(color: DesignTokens.cardText),
                 decoration: InputDecoration(
                   hintText: 'Search style, packages',
-                  hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF4A4650),
-                  ),
+                  hintStyle: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: const Color(0xFF4A4650)),
                   border: InputBorder.none,
                   isDense: true,
                 ),
@@ -273,10 +261,8 @@ class _ExploreFilterChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
           child: Text(
             label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: DesignTokens.cardText,
-              letterSpacing: 1.2,
-            ),
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: DesignTokens.cardText, letterSpacing: 1.2),
           ),
         ),
       ),
@@ -333,16 +319,13 @@ class _ExploreStyleCard extends StatelessWidget {
                   children: [
                     Text(
                       style.title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontSize: 18,
-                      ),
+                      style: Theme.of(context).textTheme.titleLarge
+                          ?.copyWith(color: Colors.white, fontSize: 18),
                     ),
                     Text(
                       style.category,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white70,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: Colors.white70),
                     ),
                   ],
                 ),

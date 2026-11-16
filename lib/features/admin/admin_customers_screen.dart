@@ -202,15 +202,12 @@ class _SearchBar extends StatelessWidget {
               child: TextField(
                 controller: controller,
                 onChanged: onChanged,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: DesignTokens.cardText,
-                  fontSize: 18,
-                ),
+                style: Theme.of(context).textTheme.bodyLarge
+                    ?.copyWith(color: DesignTokens.cardText, fontSize: 18),
                 decoration: InputDecoration(
                   hintText: 'Search',
-                  hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF4A4650),
-                  ),
+                  hintStyle: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: const Color(0xFF4A4650)),
                   border: InputBorder.none,
                   isDense: true,
                 ),
@@ -287,9 +284,8 @@ class _CustomerBookingsCard extends StatelessWidget {
               child: Center(
                 child: Text(
                   'No customers found',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: DesignTokens.cardText,
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: DesignTokens.cardText),
                 ),
               ),
             )
@@ -342,10 +338,8 @@ class _CustomerBookingRow extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 '${booking.sessionType} - ${booking.bookingDate}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF858585),
-                  fontSize: 15,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: const Color(0xFF858585), fontSize: 15),
               ),
             ],
           ),

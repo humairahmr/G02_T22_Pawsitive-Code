@@ -17,10 +17,7 @@ class RoleSelectionScreen extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, viewportConstraints) {
             return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 32,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
                   minHeight: viewportConstraints.maxHeight - 64,
@@ -34,17 +31,14 @@ class RoleSelectionScreen extends StatelessWidget {
                         final customerCard = _RoleCard(
                           role: UserRole.customer,
                           title: 'Customer',
-                          description:
-                              'Browse styles, check dates and book your photoshoot',
+                          description: 'Browse styles, check dates and book your photoshoot',
                           icon: Icons.account_circle_outlined,
-                          onTap: () =>
-                              onRoleSelected?.call(UserRole.customer),
+                          onTap: () => onRoleSelected?.call(UserRole.customer),
                         );
                         final adminCard = _RoleCard(
                           role: UserRole.admin,
                           title: 'Admin',
-                          description:
-                              'Manage orders, calendar and customers',
+                          description: 'Manage orders, calendar and customers',
                           icon: Icons.manage_accounts_outlined,
                           requiresPassword: true,
                           onTap: () => onRoleSelected?.call(UserRole.admin),
@@ -193,10 +187,10 @@ class _RoleCardState extends State<_RoleCard> {
                               widget.description,
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
-                                color: DesignTokens.cardText,
-                                fontSize: isCompact ? 15 : 17,
-                                height: 1.4,
-                              ),
+                                    color: DesignTokens.cardText,
+                                    fontSize: isCompact ? 15 : 17,
+                                    height: 1.4,
+                                  ),
                             ),
                             if (widget.requiresPassword) ...[
                               const SizedBox(height: 12),
@@ -215,9 +209,9 @@ class _RoleCardState extends State<_RoleCard> {
                                           .textTheme
                                           .bodyMedium
                                           ?.copyWith(
-                                        color: DesignTokens.cardText,
-                                        fontSize: 15,
-                                      ),
+                                            color: DesignTokens.cardText,
+                                            fontSize: 15,
+                                          ),
                                     ),
                                   ),
                                 ],

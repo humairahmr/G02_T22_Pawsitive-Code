@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/studio_tokens.dart';
+import '../../core/widgets/back_navigation.dart';
+import '../../theme/design_tokens.dart';
 
 enum BookingStatus { pending, confirmed }
 
@@ -51,7 +52,7 @@ class AdminBookingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: DesignTokens.background,
       body: SafeArea(
         child: Align(
           alignment: Alignment.topCenter,
@@ -60,7 +61,7 @@ class AdminBookingsScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.all(24),
               children: [
-                const _AdminBookingsHeader(
+                const ScreenHeader(
                   title: 'Booking',
                   fallbackLocation: '/admin/dashboard',
                 ),
@@ -90,44 +91,6 @@ class AdminBookingsScreen extends StatelessWidget {
   }
 }
 
-class _AdminBookingsHeader extends StatelessWidget {
-  const _AdminBookingsHeader({
-    required this.title,
-    required this.fallbackLocation,
-  });
-
-  final String title;
-  final String fallbackLocation;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: () {
-            final navigator = Navigator.of(context);
-            if (navigator.canPop()) {
-              navigator.pop();
-            } else {
-              navigator.pushReplacementNamed(fallbackLocation);
-            }
-          },
-          icon: const Icon(Icons.arrow_back),
-          tooltip: 'Back',
-        ),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            color: StudioTokens.cardText,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _BookingListItem extends StatelessWidget {
   const _BookingListItem({
     required this.booking,
@@ -143,8 +106,8 @@ class _BookingListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isConfirmed = booking.status == BookingStatus.confirmed;
     final badgeColor = isConfirmed
-        ? StudioTokens.confirmed
-        : StudioTokens.pending;
+        ? DesignTokens.confirmedGreen
+        : DesignTokens.studioYellow;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -161,7 +124,7 @@ class _BookingListItem extends StatelessWidget {
                     Text(
                       booking.customerName,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: StudioTokens.cardText,
+                        color: DesignTokens.cardText,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -169,10 +132,8 @@ class _BookingListItem extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       booking.sessionType,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF858585),
-                        fontSize: 15,
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(color: Color(0xFF858585), fontSize: 15),
                     ),
                   ],
                 ),
@@ -183,7 +144,7 @@ class _BookingListItem extends StatelessWidget {
                 color: badgeColor,
                 foregroundColor: isConfirmed
                     ? Colors.white
-                    : StudioTokens.cardText,
+                    : DesignTokens.cardText,
               ),
             ],
           ),
