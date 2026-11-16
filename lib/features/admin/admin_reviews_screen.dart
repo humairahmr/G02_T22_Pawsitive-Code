@@ -360,8 +360,7 @@ class _ReviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasReply = review.adminReply != null && review.adminReply!.isNotEmpty;
-
+    final hasReply = review.adminReply?.trim().isNotEmpty ?? false;
     return Card(
       color: Colors.white,
       child: Padding(
