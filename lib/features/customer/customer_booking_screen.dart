@@ -88,7 +88,7 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
                       Text(
                         'Setting',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.white,
+                          color: const Color.fromARGB(0, 200, 181, 9),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -315,7 +315,7 @@ class _AiDayFinderCard extends StatelessWidget {
                 ),
                 TextSpan(
                   text:
-                      ' photo session is around $_recommendedTime. We marked suggested dates in green.',
+                      ' photo session is around $_recommendedTime. We marked the suggested dates in green.',
                 ),
               ],
             ),
