@@ -88,7 +88,7 @@ class _CustomerBookingScreenState extends State<CustomerBookingScreen> {
                       Text(
                         'Setting',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.white,
+                          color: const Color.fromARGB(0, 200, 181, 9),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -202,7 +202,7 @@ class _BookingStep extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 20,
-          backgroundColor: DesignTokens.studioYellow,
+          backgroundColor: const Color.fromARGB(255, 255, 0, 149),
           foregroundColor: DesignTokens.cardText,
           child: Text(
             '$number',
