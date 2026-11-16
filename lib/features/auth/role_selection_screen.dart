@@ -141,7 +141,12 @@ class _RoleCardState extends State<_RoleCard> {
           boxShadow: _isHovered
               ? [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.18),
+                    color: const Color.fromARGB(
+                      255,
+                      255,
+                      255,
+                      255,
+                    ).withValues(alpha: 0.18),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -149,7 +154,7 @@ class _RoleCardState extends State<_RoleCard> {
               : null,
         ),
         child: Material(
-          color: Colors.transparent,
+          color: const Color.fromARGB(0, 255, 255, 255),
           borderRadius: BorderRadius.circular(28),
           child: InkWell(
             onTap: widget.onTap,
