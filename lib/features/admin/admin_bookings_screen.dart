@@ -24,7 +24,7 @@ class AdminBooking {
 
 const sampleAdminBookings = [
   AdminBooking(
-    customerName: 'Victoria',
+    customerName: 'Fong',
     sessionType: 'Wedding Photo',
     status: BookingStatus.pending,
     dateTime: '30 August 2026 · 10:00 AM',
