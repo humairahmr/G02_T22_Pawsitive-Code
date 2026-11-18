@@ -757,7 +757,7 @@ void main() {
   });
 
   test('design tokens define the shared studio palette and card radius', () {
-    expect(DesignTokens.background, const Color(0xFF121212));
+    expect(DesignTokens.background, const Color(0xFF1A1A1A));
     expect(DesignTokens.studioYellow, const Color(0xFFFFD600));
     expect(DesignTokens.alertPink, const Color(0xFFFFCDD2));
     expect(DesignTokens.confirmedGreen, const Color(0xFF2E7D32));
@@ -779,7 +779,7 @@ void main() {
     expect(textTheme.bodyLarge?.fontFamily, GoogleFonts.ptSans().fontFamily);
     expect(textTheme.bodyMedium?.fontFamily, GoogleFonts.ptSans().fontFamily);
     expect(textTheme.labelLarge?.fontFamily, GoogleFonts.ptSans().fontFamily);
-    expect(AppTheme.dark.scaffoldBackgroundColor, const Color(0xFF121212));
+    expect(AppTheme.dark.scaffoldBackgroundColor, const Color(0xFF1A1A1A));
     expect(AppTheme.dark.colorScheme.primary, const Color(0xFFFFD600));
   });
 }
