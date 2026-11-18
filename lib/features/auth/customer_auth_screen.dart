@@ -76,6 +76,16 @@ class _CustomerAuthScreenState extends State<CustomerAuthScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
+                    Image.asset(
+                      'Assets/Image/Logo.png',
+                      height: 120,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        debugPrint('LOGO ERROR: $error');
+                        return const SizedBox(height: 120);
+                      },
+                    ),
+                    const SizedBox(height: 8),
                     Text(
                       _isSignUp
                           ? 'Sign up to book your photography session'

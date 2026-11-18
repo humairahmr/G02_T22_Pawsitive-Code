@@ -67,7 +67,7 @@ class _AdminAuthScreenState extends State<AdminAuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: DesignTokens.background,
+      backgroundColor: const Color(0xFF1A1A1A),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -104,16 +104,25 @@ class _AdminAuthScreenState extends State<AdminAuthScreen> {
                                 ?.copyWith(fontSize: 38),
                           ),
                           const SizedBox(height: 36),
-                          const _StudioWordmark(),
+                          // Logo (shows the old text wordmark if the image
+                          // path is wrong, so the screen never breaks)
+                          Image.asset(
+                            'Assets/Image/Logo.png',
+                            height: 120,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const _StudioWordmark(),
+                          ),
                           const SizedBox(height: 40),
-                          if (!_isSignUp) ...[
-                            Text(
-                              'Enter your credentials to access your account',
-                              style: Theme.of(context).textTheme.bodyLarge
-                                  ?.copyWith(fontSize: 18),
-                            ),
-                            const SizedBox(height: 28),
-                          ],
+                          Text(
+                            _isSignUp
+                                ? 'Sign up to book your photography session'
+                                : 'Sign in to book your photography session',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(fontSize: 18),
+                          ),
+                          const SizedBox(height: 28),
                           if (_isSignUp) ...[
                             _AuthField(
                               label: 'Name',

@@ -19,9 +19,9 @@ abstract final class AppTheme {
     final baseTheme = ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: DesignTokens.background,
+      scaffoldBackgroundColor: const Color(0xFF1A1A1A),
       appBarTheme: const AppBarTheme(
-        backgroundColor: DesignTokens.background,
+        backgroundColor: const Color(0xFF1A1A1A),
         foregroundColor: Colors.white,
       ),
       cardTheme: CardThemeData(
