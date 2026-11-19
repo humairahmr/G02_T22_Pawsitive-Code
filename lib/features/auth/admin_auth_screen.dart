@@ -107,7 +107,7 @@ class _AdminAuthScreenState extends State<AdminAuthScreen> {
                           // Logo (shows the old text wordmark if the image
                           // path is wrong, so the screen never breaks)
                           Image.asset(
-                            'Assets/Image/Logo.png',
+                            'Assets/image/Logo.png',
                             height: 120,
                             fit: BoxFit.contain,
                             errorBuilder: (context, error, stackTrace) =>
