@@ -9,6 +9,7 @@ import '../../features/admin/admin_dashboard_screen.dart';
 import '../../features/admin/admin_reviews_screen.dart';
 import '../../features/admin/admin_settings_screen.dart';
 import '../../features/admin/admin_shell.dart';
+import '../../features/admin/admin_schedule_screen.dart';
 import '../../features/customer/customer_app_shell.dart';
 import '../../features/customer/customer_booking_screen.dart';
 import '../../features/customer/customer_explore_screen.dart';
@@ -28,15 +29,20 @@ GoRouter createAppRouter(AuthState auth, {String initialLocation = '/'}) {
 
       // Admin pages: must be signed in as admin
       final isAdminArea = loc.startsWith('/admin') && loc != '/admin/login';
-      if (isAdminArea && !auth.isAdmin) return '/admin/login';
+
+      if (isAdminArea && !auth.isAdmin) {
+        return '/admin/login';
+      }
 
       // Booking: must be signed in (browsing stays open)
       if (loc == '/customer/booking' && !auth.isSignedIn) {
         final from = Uri.encodeComponent(state.uri.toString());
         return '/customer/login?from=$from';
       }
+
       return null;
     },
+
     routes: [
       GoRoute(
         path: '/',
@@ -48,6 +54,7 @@ GoRouter createAppRouter(AuthState auth, {String initialLocation = '/'}) {
           },
         ),
       ),
+
       GoRoute(
         path: '/admin/login',
         builder: (context, state) => AdminAuthScreen(
@@ -57,6 +64,7 @@ GoRouter createAppRouter(AuthState auth, {String initialLocation = '/'}) {
           },
         ),
       ),
+
       GoRoute(
         path: '/customer/login',
         builder: (context, state) => CustomerAuthScreen(
@@ -67,32 +75,57 @@ GoRouter createAppRouter(AuthState auth, {String initialLocation = '/'}) {
           },
         ),
       ),
+
+      // Admin Schedule (outside ShellRoute - no bottom navigation)
+      GoRoute(
+        path: '/admin/schedule',
+        builder: (context, state) => AdminScheduleScreen(
+          onEntrySelected: (_) {
+            context.go('/admin/bookings');
+          },
+        ),
+      ),
+
+      // Admin Shell
       ShellRoute(
         builder: (context, state, child) =>
             AdminAppShell(location: state.uri.path, child: child),
         routes: [
           GoRoute(
             path: '/admin/dashboard',
-            builder: (context, state) => const AdminDashboardScreen(),
+            builder: (context, state) => AdminDashboardScreen(
+              onScheduleTap: () {
+                context.go('/admin/schedule');
+              },
+              onPaymentReviewTap: () {
+                context.go('/admin/bookings');
+              },
+            ),
           ),
+
           GoRoute(
             path: '/admin/bookings',
             builder: (context, state) => const AdminBookingsScreen(),
           ),
+
           GoRoute(
             path: '/admin/customers',
             builder: (context, state) => const AdminCustomerScreen(),
           ),
+
           GoRoute(
             path: '/admin/reviews',
             builder: (context, state) => const AdminReviewsScreen(),
           ),
+
           GoRoute(
             path: '/admin/settings',
             builder: (context, state) => const AdminSettingsScreen(),
           ),
         ],
       ),
+
+      // Customer Shell
       ShellRoute(
         builder: (context, state, child) =>
             CustomerAppShell(location: state.uri.path, child: child),
@@ -101,16 +134,19 @@ GoRouter createAppRouter(AuthState auth, {String initialLocation = '/'}) {
             path: '/customer/home',
             builder: (context, state) => const CustomerHomeScreen(),
           ),
+
           GoRoute(
             path: '/customer/explore',
             builder: (context, state) => const CustomerExploreScreen(),
           ),
+
           GoRoute(
             path: '/customer/booking',
             builder: (context, state) => CustomerBookingScreen(
               initialSessionType: state.uri.queryParameters['category'],
             ),
           ),
+
           GoRoute(
             path: '/customer/profile',
             builder: (context, state) => const CustomerProfileScreen(),

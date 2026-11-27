@@ -782,4 +782,25 @@ void main() {
     expect(AppTheme.dark.scaffoldBackgroundColor, const Color(0xFF1A1A1A));
     expect(AppTheme.dark.colorScheme.primary, const Color(0xFFFFD600));
   });
+
+  testWidgets('See full schedule opens the admin schedule', (tester) async {
+    tester.view.physicalSize = const Size(390, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpAppRouter(
+      tester,
+      initialLocation: '/admin/dashboard',
+      auth: signedInAdmin(),
+    );
+
+    await tester.ensureVisible(find.text('See full schedule'));
+    await tester.tap(find.text('See full schedule'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Schedule'), findsOneWidget);
+    expect(find.text('December 2026'), findsOneWidget);
+    expect(find.text('2 bookings'), findsOneWidget);
+  });
 }

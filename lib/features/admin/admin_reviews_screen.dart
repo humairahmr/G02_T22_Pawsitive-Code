@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/widgets/back_navigation.dart';
 import '../../theme/design_tokens.dart';
@@ -55,18 +56,27 @@ const sampleAdminReviews = [
   ),
 ];
 
+const _maxReplyLength = 500;
+
 class AdminReviewsScreen extends StatefulWidget {
   const AdminReviewsScreen({
     super.key,
     this.reviews = sampleAdminReviews,
     this.onBack,
     this.onReplySelected,
+    this.onReplySent,
     this.onPublicProfileChanged,
   });
 
   final List<AdminReview> reviews;
   final VoidCallback? onBack;
+
+  /// Called when the admin taps Reply / Edit Reply.
   final ValueChanged<AdminReview>? onReplySelected;
+
+  /// Called when the admin taps "Send reply".
+  final void Function(AdminReview review, String reply)? onReplySent;
+
   final void Function(AdminReview review, bool isPublic)?
   onPublicProfileChanged;
 
@@ -77,6 +87,9 @@ class AdminReviewsScreen extends StatefulWidget {
 class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
   ReviewCategory? _selectedCategory;
   final _publicVisibility = <String, bool>{};
+  final _replies = <String, String>{};
+  final _replyController = TextEditingController();
+  String? _editingId;
 
   static const _filters = [
     (null, 'ALL'),
@@ -85,6 +98,47 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
     (ReviewCategory.preWed, 'Pre-Wed'),
     (ReviewCategory.convocation, 'Convocation'),
   ];
+
+  @override
+  void dispose() {
+    _replyController.dispose();
+    super.dispose();
+  }
+
+  void _startEditing(AdminReview review) {
+    setState(() {
+      _editingId = review.id;
+      _replyController.text = _replies[review.id] ?? review.adminReply ?? '';
+      _replyController.selection = TextSelection.collapsed(
+        offset: _replyController.text.length,
+      );
+    });
+    widget.onReplySelected?.call(review);
+  }
+
+  void _cancelEditing() {
+    FocusScope.of(context).unfocus();
+    setState(() => _editingId = null);
+  }
+
+  void _sendReply() {
+    final id = _editingId;
+    final text = _replyController.text.trim();
+    if (id == null) return;
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Write a reply before sending.')),
+      );
+      return;
+    }
+    final review = widget.reviews.firstWhere((r) => r.id == id);
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _replies[id] = text;
+      _editingId = null;
+    });
+    widget.onReplySent?.call(review, text);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,70 +151,141 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
     return Scaffold(
       backgroundColor: DesignTokens.background,
       body: SafeArea(
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1100),
-            child: ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                ScreenHeader(
-                  title: 'Reviews',
-                  fallbackLocation: '/admin/dashboard',
-                  onBack: widget.onBack,
-                ),
-                const SizedBox(height: 28),
-                const _RatingSummaryCard(),
-                const SizedBox(height: 28),
-                SizedBox(
-                  height: 40,
+        child: Column(
+          children: [
+            Expanded(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1100),
                   child: ListView(
-                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.all(24),
                     children: [
-                      for (final (category, label) in _filters) ...[
-                        _ReviewFilterChip(
-                          label: label,
-                          selected: _selectedCategory == category,
-                          onSelected: () {
-                            setState(() {
-                              _selectedCategory = category;
-                            });
-                          },
+                      ScreenHeader(
+                        title: 'Reviews',
+                        fallbackLocation: '/admin/dashboard',
+                        onBack: widget.onBack,
+                      ),
+                      const SizedBox(height: 28),
+                      const _RatingSummaryCard(),
+                      const SizedBox(height: 28),
+                      SizedBox(
+                        height: 40,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            for (final (category, label) in _filters) ...[
+                              _ReviewFilterChip(
+                                label: label,
+                                selected: _selectedCategory == category,
+                                onSelected: () {
+                                  setState(() {
+                                    _selectedCategory = category;
+                                  });
+                                },
+                              ),
+                              if (category != ReviewCategory.convocation)
+                                const SizedBox(width: 10),
+                            ],
+                          ],
                         ),
-                        if (category != ReviewCategory.convocation)
-                          const SizedBox(width: 10),
-                      ],
+                      ),
+                      const SizedBox(height: 20),
+                      if (visibleReviews.isEmpty)
+                        const Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Text(
+                              'No reviews in this category yet.',
+                              style: TextStyle(color: DesignTokens.cardText),
+                            ),
+                          ),
+                        )
+                      else
+                        for (final review in visibleReviews) ...[
+                          _ReviewCard(
+                            review: review,
+                            reply: _replies[review.id] ?? review.adminReply,
+                            isEditing: _editingId == review.id,
+                            replyController: _replyController,
+                            isPublic:
+                                _publicVisibility[review.id] ?? review.isPublic,
+                            onReplyPressed: () => _startEditing(review),
+                            onPublicProfileChanged: (value) {
+                              setState(() {
+                                _publicVisibility[review.id] = value;
+                              });
+                              widget.onPublicProfileChanged?.call(
+                                review,
+                                value,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                        ],
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
-                if (visibleReviews.isEmpty)
-                  const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Text(
-                        'No reviews in this category yet.',
-                        style: TextStyle(color: DesignTokens.cardText),
-                      ),
-                    ),
-                  )
-                else
-                  for (final review in visibleReviews) ...[
-                    _ReviewCard(
-                      review: review,
-                      isPublic: _publicVisibility[review.id] ?? review.isPublic,
-                      onReplySelected: widget.onReplySelected,
-                      onPublicProfileChanged: (value) {
-                        setState(() {
-                          _publicVisibility[review.id] = value;
-                        });
-                        widget.onPublicProfileChanged?.call(review, value);
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-              ],
+              ),
             ),
+            if (_editingId != null)
+              _ReplyActionBar(onCancel: _cancelEditing, onSend: _sendReply),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReplyActionBar extends StatelessWidget {
+  const _ReplyActionBar({required this.onCancel, required this.onSend});
+
+  final VoidCallback onCancel;
+  final VoidCallback onSend;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 56,
+                  child: FilledButton(
+                    onPressed: onCancel,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFC0392B),
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: SizedBox(
+                  height: 56,
+                  child: FilledButton(
+                    onPressed: onSend,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: DesignTokens.studioYellow,
+                      foregroundColor: DesignTokens.cardText,
+                    ),
+                    child: const Text(
+                      'Send reply',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -348,19 +473,25 @@ class _ReviewFilterChip extends StatelessWidget {
 class _ReviewCard extends StatelessWidget {
   const _ReviewCard({
     required this.review,
+    required this.reply,
+    required this.isEditing,
+    required this.replyController,
     required this.isPublic,
-    required this.onReplySelected,
+    required this.onReplyPressed,
     required this.onPublicProfileChanged,
   });
 
   final AdminReview review;
+  final String? reply;
+  final bool isEditing;
+  final TextEditingController replyController;
   final bool isPublic;
-  final ValueChanged<AdminReview>? onReplySelected;
+  final VoidCallback onReplyPressed;
   final ValueChanged<bool> onPublicProfileChanged;
 
   @override
   Widget build(BuildContext context) {
-    final hasReply = review.adminReply?.trim().isNotEmpty ?? false;
+    final hasReply = reply?.trim().isNotEmpty ?? false;
     return Card(
       color: Colors.white,
       child: Padding(
@@ -397,7 +528,12 @@ class _ReviewCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium
                   ?.copyWith(color: DesignTokens.cardText, height: 1.4),
             ),
-            if (hasReply) ...[
+            if (isEditing) ...[
+              const SizedBox(height: 12),
+              const Divider(height: 1, color: DesignTokens.studioYellow),
+              const SizedBox(height: 12),
+              _ReplyEditor(controller: replyController),
+            ] else if (hasReply) ...[
               const SizedBox(height: 12),
               Container(
                 width: double.infinity,
@@ -407,7 +543,7 @@ class _ReviewCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  'Your reply: ${review.adminReply}',
+                  'Your reply: $reply',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: DesignTokens.cardText,
                     fontWeight: FontWeight.bold,
@@ -416,11 +552,12 @@ class _ReviewCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 12),
-            const Divider(height: 1, color: DesignTokens.studioYellow),
+            if (!isEditing)
+              const Divider(height: 1, color: DesignTokens.studioYellow),
             LayoutBuilder(
               builder: (context, constraints) {
                 final replyButton = TextButton.icon(
-                  onPressed: () => onReplySelected?.call(review),
+                  onPressed: onReplyPressed,
                   style: TextButton.styleFrom(
                     foregroundColor: DesignTokens.cardText,
                     padding: EdgeInsets.zero,
@@ -480,6 +617,53 @@ class _ReviewCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ReplyEditor extends StatelessWidget {
+  const _ReplyEditor({required this.controller});
+
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F1F1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: controller,
+            autofocus: true,
+            minLines: 3,
+            maxLines: 5,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(_maxReplyLength),
+            ],
+            style: const TextStyle(color: DesignTokens.cardText, fontSize: 16),
+            decoration: const InputDecoration.collapsed(
+              hintText: 'Write your reply',
+              hintStyle: TextStyle(color: Color(0xFF858585)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) => Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                '${value.text.length} / $_maxReplyLength',
+                style: const TextStyle(color: Color(0xFF858585), fontSize: 13),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
