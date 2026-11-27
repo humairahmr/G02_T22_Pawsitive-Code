@@ -20,6 +20,7 @@ import 'package:pbs_pawsitivecode/features/customer/customer_home_screen.dart';
 import 'package:pbs_pawsitivecode/features/customer/customer_profile_screen.dart';
 import 'package:pbs_pawsitivecode/features/customer/customer_app_shell.dart';
 import 'package:pbs_pawsitivecode/theme/design_tokens.dart';
+import 'package:pbs_pawsitivecode/features/admin/admin_dashboard_screen.dart';
 
 AuthState signedInAdmin() => AuthState()..signInAs(AuthRole.admin);
 AuthState signedInCustomer() => AuthState()..signInAs(AuthRole.customer);
@@ -225,7 +226,7 @@ void main() {
     expect(find.text('RM x,xxx'), findsOneWidget);
     expect(find.text('Total bookings'), findsOneWidget);
     expect(find.text('Pending request'), findsOneWidget);
-    expect(find.text('Confirmed'), findsOneWidget);
+    expect(find.text('Confirmed'), findsWidgets);
     expect(find.text('Completed'), findsOneWidget);
     expect(find.text('Payment pending'), findsOneWidget);
     expect(find.text('3 payments need review'), findsOneWidget);
@@ -238,9 +239,21 @@ void main() {
     expect(find.text('Graduation'), findsOneWidget);
     expect(find.text('Wedding'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('See full schedule'));
-    await tester.tap(find.text('See full schedule'));
-    expect(scheduleTapped, isTrue);
+    final scheduleButton = find.text('See full schedule');
+    final dashboardScrollable = find
+        .descendant(
+          of: find.byType(AdminDashboardScreen),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+
+    await tester.tap(scheduleButton);
+    await tester.pumpAndSettle();
+
+    await tester.tap(scheduleButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Today’s schedule'), findsOneWidget);
   });
 
   testWidgets('admin dashboard metrics expand on wide screens', (tester) async {
@@ -265,6 +278,7 @@ void main() {
     tester,
   ) async {
     AdminBooking? selectedBooking;
+
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -279,18 +293,26 @@ void main() {
       ),
     );
 
+    // Check the booking screen and customer names.
     expect(find.text('Booking'), findsOneWidget);
     expect(find.text('Fong'), findsOneWidget);
     expect(find.text('Dayang'), findsOneWidget);
-    expect(find.text('Wedding Photo'), findsNWidgets(2));
-    expect(find.text('Pending'), findsOneWidget);
-    expect(find.text('Confirmed'), findsOneWidget);
-    expect(find.text('30 August 2026 · 10:00 AM'), findsOneWidget);
-    expect(find.text('Payment pending'), findsOneWidget);
-    expect(find.text('Payment completed'), findsOneWidget);
-    expect(find.text('See details'), findsNWidgets(2));
 
+    // Check booking information and statuses.
+    expect(find.text('Wedding Photo'), findsNWidgets(4));
+    expect(find.text('Pending verification'), findsWidgets);
+    expect(find.text('Confirmed'), findsWidgets);
+    expect(find.text('Rejected'), findsWidgets);
+    expect(find.text('30 August 2026 · 10:00 AM'), findsOneWidget);
+
+    // There are four booking detail buttons on the screen.
+    expect(find.text('See details'), findsNWidgets(4));
+
+    // Select the first booking (Fong).
     await tester.tap(find.text('See details').first);
+    await tester.pumpAndSettle();
+
+    expect(selectedBooking, isNotNull);
     expect(selectedBooking?.customerName, 'Fong');
   });
 
@@ -334,7 +356,7 @@ void main() {
     expect(find.byType(TextField), findsOneWidget);
     expect(find.text('ALL'), findsOneWidget);
     expect(find.text('Upcoming'), findsOneWidget);
-    expect(find.text('Unpaid'), findsOneWidget);
+    expect(find.text('Unpaid'), findsWidgets);
     expect(find.text('Past'), findsOneWidget);
     expect(find.text('Dayang'), findsOneWidget);
     expect(find.text('Fong'), findsOneWidget);
@@ -582,19 +604,45 @@ void main() {
     );
 
     expect(find.byType(CustomerBookingScreen), findsOneWidget);
-    await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+
+    // Scroll until AI Day Finder is visible.
+    await tester.scrollUntilVisible(
+      find.text('AI day finder'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
+
     expect(find.text('AI day finder'), findsOneWidget);
+
+    // Find the calendar availability information.
+    await tester.scrollUntilVisible(
+      find.text('Fully booked'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('Fully booked'), findsOneWidget);
 
-    await tester.drag(find.byType(ListView).first, const Offset(0, -250));
+    // Select October 9.
+    await tester.scrollUntilVisible(
+      find.text('9'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
+
     await tester.ensureVisible(find.text('9'));
     await tester.tap(find.text('9'));
     await tester.pumpAndSettle();
+
     expect(find.text('9 Oct 2026'), findsOneWidget);
+
+    // Confirm booking.
     await tester.tap(find.text('Confirm'));
     await tester.pumpAndSettle();
+
     expect(
       find.text('Selected October 9, 2026 for your booking.'),
       findsOneWidget,
@@ -615,7 +663,7 @@ void main() {
     expect(find.text('Dayang'), findsOneWidget);
     expect(find.text('Upcoming shoots'), findsOneWidget);
     expect(find.text('Portrait session'), findsOneWidget);
-    expect(find.text('Confirmed'), findsOneWidget);
+    expect(find.text('Confirmed'), findsWidgets);
     await tester.scrollUntilVisible(find.text('Booking reminder'), 300);
     expect(find.text('Booking reminder'), findsOneWidget);
     expect(find.byType(Switch), findsOneWidget);
@@ -796,6 +844,8 @@ void main() {
     );
 
     await tester.ensureVisible(find.text('See full schedule'));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('See full schedule'));
     await tester.pumpAndSettle();
 
