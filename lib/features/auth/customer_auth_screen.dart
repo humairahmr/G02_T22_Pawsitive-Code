@@ -77,7 +77,7 @@ class _CustomerAuthScreenState extends State<CustomerAuthScreen> {
                     ),
                     const SizedBox(height: 8),
                     Image.asset(
-                      'Assets/Image/Logo.png',
+                      'Assets/image/Logo.png',
                       height: 120,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {

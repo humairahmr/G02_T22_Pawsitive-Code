@@ -676,31 +676,35 @@ class _StarRating extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var index = 1; index <= 5; index++)
-              Icon(
-                Icons.star,
-                size: 20,
-                color: index <= rating
-                    ? DesignTokens.studioYellow
-                    : const Color(0xFFBDBDBD),
-              ),
-          ],
-        ),
-        Text(
-          'Rated ${rating.toStringAsFixed(1)}/5.0 by users',
-          style: const TextStyle(
-            color: Color(0xFF757575),
-            fontSize: 9,
-            fontWeight: FontWeight.w600,
+        return Semantics(
+      label: 'Rated $rating out of 5 stars',
+      excludeSemantics: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var index = 1; index <= 5; index++)
+                Icon(
+                  Icons.star,
+                  size: 20,
+                  color: index <= rating
+                      ? DesignTokens.studioYellow
+                      : const Color(0xFFBDBDBD),
+                ),
+            ],
           ),
-        ),
-      ],
+          Text(
+            'Rated ${rating.toStringAsFixed(1)}/5.0 by users',
+            style: const TextStyle(
+              color: Color(0xFF757575),
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
