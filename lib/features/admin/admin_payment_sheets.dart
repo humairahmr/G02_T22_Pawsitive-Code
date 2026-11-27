@@ -91,8 +91,8 @@ class _SheetButtons extends StatelessWidget {
   const _SheetButtons({
     required this.confirmLabel,
     required this.onConfirm,
-    this.confirmColor = DesignTokens.studioYellow,
-    this.confirmTextColor = _dark,
+    required this.confirmColor,
+    required this.confirmTextColor,
   });
 
   final String confirmLabel;
@@ -315,7 +315,9 @@ class _ReviewCashSheetState extends State<_ReviewCashSheet> {
           ),
           const SizedBox(height: 16),
           _SheetButtons(
-            confirmLabel: 'Approve balance',
+            confirmLabel: 'Confirm',
+            confirmColor: DesignTokens.studioYellow,
+            confirmTextColor: _dark,
             onConfirm: valid
                 ? () =>
                       Navigator.of(context)
@@ -412,6 +414,8 @@ class _ApproveDepositSheetState extends State<_ApproveDepositSheet> {
           const SizedBox(height: 16),
           _SheetButtons(
             confirmLabel: 'Approve balance',
+            confirmColor: DesignTokens.studioYellow,
+            confirmTextColor: _dark,
             onConfirm: allChecked
                 ? () => Navigator.of(context).pop(true)
                 : null,

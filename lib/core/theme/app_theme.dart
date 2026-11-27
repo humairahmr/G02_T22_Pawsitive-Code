@@ -21,7 +21,7 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: const Color(0xFF1A1A1A),
       appBarTheme: const AppBarTheme(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: Color(0xFF1A1A1A),
         foregroundColor: Colors.white,
       ),
       cardTheme: CardThemeData(
