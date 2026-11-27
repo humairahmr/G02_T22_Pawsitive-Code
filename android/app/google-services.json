@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1038194443926",
+    "project_id": "blackbox-photography-system",
+    "storage_bucket": "blackbox-photography-system.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1038194443926:android:41d4ec871da1960b89e4b7",
+        "android_client_info": {
+          "package_name": "com.example.pbs_pawsitivecode"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3TZXDMXdMF_CCAyWwPJ9x-WGjfc3rlJA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

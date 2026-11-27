@@ -315,7 +315,7 @@ class _AiDayFinderCard extends StatelessWidget {
                 ),
                 TextSpan(
                   text:
-                      ' photo session is around $_recommendedTime. We marked suggested dates in green.',
+                      ' photo session is around $_recommendedTime. We marked the suggested dates in green.',
                 ),
               ],
             ),
