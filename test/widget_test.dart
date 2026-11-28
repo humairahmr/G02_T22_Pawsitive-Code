@@ -20,6 +20,10 @@ import 'package:pbs_pawsitivecode/features/customer/customer_home_screen.dart';
 import 'package:pbs_pawsitivecode/features/customer/customer_profile_screen.dart';
 import 'package:pbs_pawsitivecode/features/customer/customer_app_shell.dart';
 import 'package:pbs_pawsitivecode/theme/design_tokens.dart';
+import 'package:pbs_pawsitivecode/features/admin/admin_booking_detail_screen.dart';
+import 'package:pbs_pawsitivecode/features/admin/admin_packages_screen.dart';
+import 'package:pbs_pawsitivecode/features/admin/models/payment_review.dart';
+import 'package:pbs_pawsitivecode/features/admin/models/studio_package.dart';
 
 AuthState signedInAdmin() => AuthState()..signInAs(AuthRole.admin);
 AuthState signedInCustomer() => AuthState()..signInAs(AuthRole.customer);
@@ -261,12 +265,11 @@ void main() {
     expect(tester.getSize(bookingCard).width, greaterThan(200));
   });
 
-  testWidgets('admin bookings show status, payment, and detail action', (
+  testWidgets('admin bookings show deposit, balance, filters, and details', (
     tester,
   ) async {
-    AdminBooking? selectedBooking;
-
-    tester.view.physicalSize = const Size(390, 844);
+    AdminBooking? selected;
+    tester.view.physicalSize = const Size(800, 3000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -275,32 +278,99 @@ void main() {
       MaterialApp(
         theme: AppTheme.dark,
         home: AdminBookingsScreen(
-          onBookingSelected: (booking) => selectedBooking = booking,
+          store: BookingStore(),
+          onBookingSelected: (b) => selected = b,
         ),
       ),
     );
 
-    // Check the booking screen and customer names.
-    expect(find.text('Booking'), findsOneWidget);
+    expect(find.text('Showing 5 of 5 bookings'), findsOneWidget);
     expect(find.text('Fong'), findsOneWidget);
-    expect(find.text('Dayang'), findsOneWidget);
+    expect(find.text('Siti'), findsOneWidget);
+    expect(find.text('Wedding Classic · RM 1,400'), findsNWidgets(3));
+    expect(find.text('Locked'), findsNWidgets(3));
+    expect(find.text('See details'), findsNWidgets(5));
 
-    // Check booking information and statuses.
-    expect(find.text('Wedding Photo'), findsNWidgets(4));
-    expect(find.text('Pending verification'), findsWidgets);
-    expect(find.text('Confirmed'), findsWidgets);
-    expect(find.text('Rejected'), findsWidgets);
-    expect(find.text('30 August 2026 · 10:00 AM'), findsOneWidget);
+    await tester.tap(find.text('Rejected').first); // filter chip
+    await tester.pumpAndSettle();
+    expect(find.text('Showing 1 of 5 bookings'), findsOneWidget);
+    expect(find.text('Ros'), findsOneWidget);
+    expect(find.text('Fong'), findsNothing);
 
-    // There are four booking detail buttons on the screen.
-    expect(find.text('See details'), findsNWidgets(4));
-
-    // Select the first booking (Fong).
+    await tester.tap(find.text('All').first);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('See details').first);
+    expect(selected?.customerName, 'Fong');
+  });
+
+  testWidgets('admin can approve a QR deposit and it turns paid', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final store = BookingStore();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark,
+        home: AdminBookingDetailScreen(
+          bookingRef: 'BBS-261212-014',
+          store: store,
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Approve deposit'));
+    await tester.pumpAndSettle();
+    expect(find.text('Review deposit'), findsOneWidget);
+
+    final checks = find.descendant(
+      of: find.byType(BottomSheet),
+      matching: find.byType(CheckboxListTile),
+    );
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(checks.at(i));
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(
+      find.descendant(
+        of: find.byType(BottomSheet),
+        matching: find.text('Approve deposit'),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    expect(selectedBooking, isNotNull);
-    expect(selectedBooking?.customerName, 'Fong');
+    expect(find.text('Deposit payment approved'), findsOneWidget);
+    expect(find.text('Back to booking'), findsOneWidget);
+    expect(store.byRef('BBS-261212-014')!.deposit.status, PaymentStatus.paid);
+  });
+
+  testWidgets('packages list shows prices and filters by category', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark,
+        home: AdminPackagesScreen(store: PackageStore()),
+      ),
+    );
+
+    expect(find.text('Wedding Classic'), findsOneWidget);
+    expect(find.text('RM 1,200 · 2 hr'), findsOneWidget);
+    expect(find.text('Hidden'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Maternity').first);
+    await tester.tap(find.text('Maternity').first); // filter chip
+    await tester.pumpAndSettle();
+    expect(find.text('Wedding Classic'), findsNothing);
+    expect(find.text('Maternity Glow'), findsOneWidget);
   });
 
   testWidgets('Booking destination opens AdminBookingsScreen', (tester) async {

@@ -3,23 +3,24 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/widgets/back_navigation.dart';
 import '../../theme/design_tokens.dart';
+import 'models/admin_booking.dart';
 import 'models/payment_review.dart';
 import 'admin_payment_sheets.dart';
+import 'admin_payment_status_pill.dart';
 
-const _red = Color(0xFFC0392B);
-const _dark = Color(0xFF1A1A1A);
+const _dark = DesignTokens.cardText;
 
 class AdminBookingDetailScreen extends StatefulWidget {
   const AdminBookingDetailScreen({
     super.key,
-    required this.payment,
-    this.onChanged,
+    required this.bookingRef,
+    this.stage = PaymentStage.deposit,
+    this.store,
   });
 
-  final PaymentReview payment;
-
-  /// Called whenever the admin approves or rejects (hook up to backend later).
-  final ValueChanged<PaymentReview>? onChanged;
+  final String bookingRef;
+  final PaymentStage stage;
+  final BookingStore? store;
 
   @override
   State<AdminBookingDetailScreen> createState() =>
@@ -27,55 +28,46 @@ class AdminBookingDetailScreen extends StatefulWidget {
 }
 
 class _AdminBookingDetailScreenState extends State<AdminBookingDetailScreen> {
-  late PaymentReview _p = widget.payment;
   String? _banner;
   bool _bannerIsSuccess = true;
 
-  bool get _resolved =>
-      _p.status == PaymentStatus.paid || _p.status == PaymentStatus.rejected;
+  BookingStore get _store => widget.store ?? bookingStore;
 
-  void _update(PaymentReview next, {required String banner, required bool ok}) {
+  void _apply(PaymentReview next, {required bool ok}) {
+    _store.updatePayment(next);
     setState(() {
-      _p = next;
-      _banner = banner;
+      _banner = '${next.stageLabel} payment ${ok ? 'approved' : 'rejected'}';
       _bannerIsSuccess = ok;
     });
-    widget.onChanged?.call(next);
   }
 
-  Future<void> _markCashPaid() async {
-    final result = await showReviewCashSheet(context, payment: _p);
-    if (result == null) return;
-    _update(
-      _p.copyWith(
+  Future<void> _markCashPaid(PaymentReview p) async {
+    final result = await showReviewCashSheet(context, payment: p);
+    if (result == null || !mounted) return;
+    _apply(
+      p.copyWith(
         status: PaymentStatus.paid,
         receivedAmount: result.amount,
         receivedAt: result.receivedOn,
       ),
-      banner: 'Balance payment approved',
       ok: true,
     );
   }
 
-  Future<void> _approveQr() async {
-    final ok = await showApproveDepositSheet(context, payment: _p);
-    if (ok != true) return;
-    _update(
-      _p.copyWith(status: PaymentStatus.paid),
-      banner: 'Balance payment approved',
-      ok: true,
-    );
+  Future<void> _approveQr(PaymentReview p) async {
+    final ok = await showApprovePaymentSheet(context, payment: p);
+    if (ok != true || !mounted) return;
+    _apply(p.copyWith(status: PaymentStatus.paid), ok: true);
   }
 
-  Future<void> _reject() async {
-    final result = await showRejectSheet(context, payment: _p);
-    if (result == null) return;
-    _update(
-      _p.copyWith(
+  Future<void> _reject(PaymentReview p) async {
+    final result = await showRejectSheet(context, payment: p);
+    if (result == null || !mounted) return;
+    _apply(
+      p.copyWith(
         status: PaymentStatus.rejected,
         rejectionNote: result.note.isEmpty ? result.reason : result.note,
       ),
-      banner: 'Balance payment rejected',
       ok: false,
     );
   }
@@ -99,80 +91,106 @@ class _AdminBookingDetailScreenState extends State<AdminBookingDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: DesignTokens.background,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Column(
-              children: [
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                    children: [
-                      Row(
+    return ListenableBuilder(
+      listenable: _store,
+      builder: (context, _) {
+        final p = _store.byRef(widget.bookingRef)?.paymentFor(widget.stage);
+        if (p == null) {
+          return const Scaffold(
+            backgroundColor: DesignTokens.background,
+            body: Center(child: Text('Booking not found')),
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: DesignTokens.background,
+          body: SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                         children: [
-                          const AppBackButton(
-                            fallbackLocation: '/admin/bookings',
+                          Row(
+                            children: [
+                              const AppBackButton(
+                                fallbackLocation: '/admin/bookings',
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Booking',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium,
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Booking',
-                            style: Theme.of(context).textTheme.headlineMedium,
+                          const SizedBox(height: 12),
+                          if (_banner != null) ...[
+                            _Banner(text: _banner!, success: _bannerIsSuccess),
+                            const SizedBox(height: 16),
+                          ],
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Booking ref',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
+                                    ),
+                                    Text(
+                                      p.bookingRef,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              PaymentStatusPill(status: p.status),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          _CustomerCard(payment: p),
+                          const SizedBox(height: 16),
+                          _PaymentCard(
+                            payment: p,
+                            onExpandReceipt: _expandReceipt,
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      if (_banner != null) ...[
-                        _Banner(text: _banner!, success: _bannerIsSuccess),
-                        const SizedBox(height: 16),
-                      ],
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Booking ref',
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                                Text(
-                                  _p.bookingRef,
-                                  style: Theme.of(context).textTheme.titleLarge
-                                      ?.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          ),
-                          _StatusPill(status: _p.status),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      _CustomerCard(payment: _p),
-                      const SizedBox(height: 16),
-                      _BalanceCard(
-                        payment: _p,
-                        onExpandReceipt: _expandReceipt,
-                      ),
-                    ],
-                  ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                      child: _buildActions(p),
+                    ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  child: _buildActions(),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildActions() {
-    if (_resolved) {
+  Widget _buildActions(PaymentReview p) {
+    final isCash = p.method == PaymentMethod.cash;
+    final actionable =
+        p.status == PaymentStatus.pendingVerification ||
+        (isCash && p.status == PaymentStatus.unpaid);
+
+    if (!actionable) {
       return SizedBox(
         width: double.infinity,
         height: 56,
@@ -190,16 +208,15 @@ class _AdminBookingDetailScreenState extends State<AdminBookingDetailScreen> {
       );
     }
 
-    final isCash = _p.method == PaymentMethod.cash;
     return Row(
       children: [
         Expanded(
           child: SizedBox(
             height: 56,
             child: FilledButton(
-              onPressed: _reject,
+              onPressed: () => _reject(p),
               style: FilledButton.styleFrom(
-                backgroundColor: _red,
+                backgroundColor: paymentRed,
                 foregroundColor: Colors.white,
               ),
               child: const Text(
@@ -214,7 +231,7 @@ class _AdminBookingDetailScreenState extends State<AdminBookingDetailScreen> {
           child: SizedBox(
             height: 56,
             child: FilledButton(
-              onPressed: isCash ? _markCashPaid : _approveQr,
+              onPressed: () => isCash ? _markCashPaid(p) : _approveQr(p),
               style: FilledButton.styleFrom(
                 backgroundColor: isCash
                     ? DesignTokens.studioYellow
@@ -222,7 +239,7 @@ class _AdminBookingDetailScreenState extends State<AdminBookingDetailScreen> {
                 foregroundColor: isCash ? _dark : Colors.white,
               ),
               child: Text(
-                isCash ? 'Mark as paid' : 'Approve balance',
+                isCash ? 'Mark as paid' : 'Approve ${p.stageWord}',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
@@ -241,68 +258,26 @@ class _Banner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: success ? DesignTokens.confirmedGreen : _red,
+        color: success ? DesignTokens.confirmedGreen : paymentRed,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
           Icon(success ? Icons.check : Icons.close, color: Colors.white),
           const SizedBox(width: 12),
-          Text(
-            text,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+          Expanded(
+            // <-- add this
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.status, this.small = false});
-  final PaymentStatus status;
-  final bool small;
-
-  @override
-  Widget build(BuildContext context) {
-    late final String label;
-    late final Color bg;
-    late final Color fg;
-    switch (status) {
-      case PaymentStatus.unpaid:
-        label = 'Unpaid';
-        bg = _red;
-        fg = Colors.white;
-      case PaymentStatus.pendingVerification:
-        label = 'Pending verification';
-        bg = DesignTokens.studioYellow;
-        fg = _dark;
-      case PaymentStatus.paid:
-        label = 'Paid';
-        bg = DesignTokens.confirmedGreen;
-        fg = Colors.white;
-      case PaymentStatus.rejected:
-        label = 'Rejected';
-        bg = _red;
-        fg = Colors.white;
-    }
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: small ? 14 : 18,
-        vertical: small ? 6 : 10,
-      ),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(color: fg, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -372,8 +347,8 @@ class _CustomerCard extends StatelessWidget {
   }
 }
 
-class _BalanceCard extends StatelessWidget {
-  const _BalanceCard({required this.payment, required this.onExpandReceipt});
+class _PaymentCard extends StatelessWidget {
+  const _PaymentCard({required this.payment, required this.onExpandReceipt});
   final PaymentReview payment;
   final VoidCallback onExpandReceipt;
 
@@ -397,12 +372,22 @@ class _BalanceCard extends StatelessWidget {
     final isQr = p.method == PaymentMethod.qrCode;
 
     Widget? note;
-    if (p.status == PaymentStatus.unpaid && !isQr) {
+    if (p.status == PaymentStatus.rejected && p.rejectionNote != null) {
+      note = _NoteBox(
+        text: 'Note to customer: “${p.rejectionNote}”',
+        color: const Color(0xFFFDE8E6),
+        textColor: paymentRed,
+      );
+    } else if (p.status == PaymentStatus.unpaid && !isQr) {
       note = _NoteBox(
         text:
             'Collect ${formatRm(p.amount)} in cash when the customer arrives.',
         color: const Color(0xFFFFF4CC),
-        icon: Icons.info_outline,
+      );
+    } else if (p.status == PaymentStatus.unpaid && isQr) {
+      note = const _NoteBox(
+        text: 'Waiting for the customer to upload a receipt.',
+        color: Color(0xFFFFF4CC),
       );
     } else if (p.status == PaymentStatus.paid &&
         !isQr &&
@@ -412,14 +397,6 @@ class _BalanceCard extends StatelessWidget {
             'Cash received: ${formatRm(p.receivedAmount ?? p.amount)} · '
             '${formatDateTime(p.receivedAt!)}',
         color: const Color(0xFFE4F0E4),
-        icon: Icons.info_outline,
-      );
-    } else if (p.status == PaymentStatus.rejected && p.rejectionNote != null) {
-      note = _NoteBox(
-        text: 'Note to customer: “${p.rejectionNote}”',
-        color: const Color(0xFFFDE8E6),
-        icon: Icons.info_outline,
-        textColor: _red,
       );
     }
 
@@ -434,17 +411,17 @@ class _BalanceCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Balance',
-                  style: TextStyle(
+                  p.stageLabel,
+                  style: const TextStyle(
                     color: _dark,
                     fontWeight: FontWeight.w900,
                     fontSize: 22,
                   ),
                 ),
               ),
-              _StatusPill(status: p.status, small: true),
+              PaymentStatusPill(status: p.status, small: true),
             ],
           ),
           _row('Method', p.methodLabel),
@@ -503,13 +480,11 @@ class _NoteBox extends StatelessWidget {
   const _NoteBox({
     required this.text,
     required this.color,
-    required this.icon,
     this.textColor = Colors.black87,
   });
 
   final String text;
   final Color color;
-  final IconData icon;
   final Color textColor;
 
   @override
@@ -524,7 +499,7 @@ class _NoteBox extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: textColor),
+          Icon(Icons.info_outline, size: 20, color: textColor),
           const SizedBox(width: 10),
           Expanded(
             child: Text(text, style: TextStyle(color: textColor)),

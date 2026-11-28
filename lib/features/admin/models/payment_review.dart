@@ -1,6 +1,8 @@
 enum PaymentMethod { cash, qrCode }
 
-enum PaymentStatus { unpaid, pendingVerification, paid, rejected }
+enum PaymentStage { deposit, balance }
+
+enum PaymentStatus { unpaid, pendingVerification, paid, rejected, cancelled }
 
 String formatDateTime(DateTime d) {
   const months = [
@@ -33,6 +35,7 @@ String formatRm(double amount) {
   return 'RM $buffer';
 }
 
+/// One payment (the deposit OR the balance) of a booking.
 class PaymentReview {
   const PaymentReview({
     required this.bookingRef,
@@ -41,7 +44,7 @@ class PaymentReview {
     required this.method,
     required this.amount,
     required this.status,
-    this.depositAmount = 420,
+    this.stage = PaymentStage.deposit,
     this.receiptUploadedAt,
     this.receivedAmount,
     this.receivedAt,
@@ -52,14 +55,17 @@ class PaymentReview {
   final String customerName;
   final String email;
   final PaymentMethod method;
+  final PaymentStage stage;
   final double amount;
-  final double depositAmount;
   final PaymentStatus status;
   final DateTime? receiptUploadedAt;
   final double? receivedAmount;
   final DateTime? receivedAt;
   final String? rejectionNote;
 
+  String get stageLabel =>
+      stage == PaymentStage.deposit ? 'Deposit' : 'Balance';
+  String get stageWord => stageLabel.toLowerCase();
   String get methodLabel => method == PaymentMethod.cash ? 'Cash' : 'QR Code';
 
   PaymentReview copyWith({
@@ -73,37 +79,13 @@ class PaymentReview {
       customerName: customerName,
       email: email,
       method: method,
+      stage: stage,
       amount: amount,
-      depositAmount: depositAmount,
       status: status ?? this.status,
       receiptUploadedAt: receiptUploadedAt,
       receivedAmount: receivedAmount ?? this.receivedAmount,
       receivedAt: receivedAt ?? this.receivedAt,
       rejectionNote: rejectionNote ?? this.rejectionNote,
-    );
-  }
-
-  /// Placeholder data until the real backend exists.
-  /// Fong = unpaid cash booking, everyone else = QR receipt to verify.
-  factory PaymentReview.demo(String customerName) {
-    if (customerName == 'Fong') {
-      return PaymentReview(
-        bookingRef: 'BBS-261212-014',
-        customerName: customerName,
-        email: 'xxxxx@gmail.com',
-        method: PaymentMethod.cash,
-        amount: 1400,
-        status: PaymentStatus.unpaid,
-      );
-    }
-    return PaymentReview(
-      bookingRef: 'BBS-261212-014',
-      customerName: customerName,
-      email: 'xxxxx@gmail.com',
-      method: PaymentMethod.qrCode,
-      amount: 1400,
-      status: PaymentStatus.pendingVerification,
-      receiptUploadedAt: DateTime(2026, 11, 24, 15, 42),
     );
   }
 }

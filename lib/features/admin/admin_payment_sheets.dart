@@ -3,19 +3,21 @@ import 'package:flutter/services.dart';
 
 import '../../theme/design_tokens.dart';
 import 'models/payment_review.dart';
+import 'admin_payment_status_pill.dart';
 
-const _dark = Color(0xFF1A1A1A);
-const _red = Color(0xFFC0392B);
+const _dark = DesignTokens.cardText;
 
-class _SheetFrame extends StatelessWidget {
-  const _SheetFrame({
+/// White bottom-sheet container used by every pop-up.
+class SheetFrame extends StatelessWidget {
+  const SheetFrame({
+    super.key,
     required this.title,
-    required this.subtitle,
     required this.child,
+    this.subtitle,
   });
 
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final Widget child;
 
   @override
@@ -24,11 +26,10 @@ class _SheetFrame extends StatelessWidget {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
+      child: Material(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        clipBehavior: Clip.antiAlias,
         child: SafeArea(
           top: false,
           child: SingleChildScrollView(
@@ -70,10 +71,11 @@ class _SheetFrame extends StatelessWidget {
                         ),
                       ],
                     ),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(color: Colors.black54),
-                    ),
+                    if (subtitle != null)
+                      Text(
+                        subtitle!,
+                        style: const TextStyle(color: Colors.black54),
+                      ),
                     const SizedBox(height: 16),
                     child,
                   ],
@@ -88,17 +90,10 @@ class _SheetFrame extends StatelessWidget {
 }
 
 class _SheetButtons extends StatelessWidget {
-  const _SheetButtons({
-    required this.confirmLabel,
-    required this.onConfirm,
-    required this.confirmColor,
-    required this.confirmTextColor,
-  });
+  const _SheetButtons({required this.confirmLabel, required this.onConfirm});
 
   final String confirmLabel;
   final VoidCallback? onConfirm;
-  final Color confirmColor;
-  final Color confirmTextColor;
 
   @override
   Widget build(BuildContext context) {
@@ -124,8 +119,8 @@ class _SheetButtons extends StatelessWidget {
             child: FilledButton(
               onPressed: onConfirm,
               style: FilledButton.styleFrom(
-                backgroundColor: confirmColor,
-                foregroundColor: confirmTextColor,
+                backgroundColor: DesignTokens.studioYellow,
+                foregroundColor: _dark,
                 disabledBackgroundColor: Colors.black12,
               ),
               child: Text(
@@ -169,27 +164,28 @@ class _InfoBox extends StatelessWidget {
   }
 }
 
-InputDecoration _fieldDecoration({Widget? suffix}) => InputDecoration(
-  suffixIcon: suffix,
-  filled: true,
-  fillColor: Colors.white,
-  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-  border: OutlineInputBorder(
+InputDecoration _fieldDecoration({Widget? suffix, String? prefixText}) {
+  final border = OutlineInputBorder(
     borderRadius: BorderRadius.circular(14),
     borderSide: const BorderSide(color: Colors.black26),
-  ),
-  enabledBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(14),
-    borderSide: const BorderSide(color: Colors.black26),
-  ),
-  focusedBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(14),
-    borderSide: const BorderSide(color: _dark, width: 1.5),
-  ),
-);
+  );
+  return InputDecoration(
+    suffixIcon: suffix,
+    prefixText: prefixText,
+    prefixStyle: const TextStyle(color: _dark),
+    filled: true,
+    fillColor: Colors.white,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+    border: border,
+    enabledBorder: border,
+    focusedBorder: border.copyWith(
+      borderSide: const BorderSide(color: _dark, width: 1.5),
+    ),
+  );
+}
 
 // ---------------------------------------------------------------------------
-// 1. Cash: "Review balance"
+// Cash: "Review deposit" / "Review balance"
 // ---------------------------------------------------------------------------
 
 Future<({double amount, DateTime receivedOn})?> showReviewCashSheet(
@@ -255,9 +251,9 @@ class _ReviewCashSheetState extends State<_ReviewCashSheet> {
     final parsed = double.tryParse(_amount.text);
     final valid = _confirmed && parsed != null && parsed > 0;
 
-    return _SheetFrame(
-      title: 'Review balance',
-      subtitle: '${p.customerName} · ${p.bookingRef} · ${p.methodLabel}',
+    return SheetFrame(
+      title: 'Review ${p.stageWord}',
+      subtitle: '${p.customerName} · ${p.bookingRef} · ${p.stageLabel} · Cash',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -274,7 +270,7 @@ class _ReviewCashSheetState extends State<_ReviewCashSheet> {
             ],
             onChanged: (_) => setState(() {}),
             style: const TextStyle(color: _dark),
-            decoration: _fieldDecoration().copyWith(prefixText: 'RM '),
+            decoration: _fieldDecoration(prefixText: 'RM '),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -303,21 +299,19 @@ class _ReviewCashSheetState extends State<_ReviewCashSheet> {
             onChanged: (v) => setState(() => _confirmed = v ?? false),
             activeColor: DesignTokens.studioYellow,
             checkColor: _dark,
-            title: const Text(
-              'I confirm the cash balance was received in person.',
-              style: TextStyle(color: _dark),
+            title: Text(
+              'I confirm the cash ${p.stageWord} was received in person.',
+              style: const TextStyle(color: _dark),
             ),
           ),
-          const _InfoBox(
+          _InfoBox(
             text:
                 'Recorded as Admin ADM-001 with the timestamp above. '
-                'The deposit becomes Paid.',
+                'The ${p.stageWord} becomes Paid.',
           ),
           const SizedBox(height: 16),
           _SheetButtons(
-            confirmLabel: 'Confirm',
-            confirmColor: DesignTokens.studioYellow,
-            confirmTextColor: _dark,
+            confirmLabel: 'Approve ${p.stageWord}',
             onConfirm: valid
                 ? () =>
                       Navigator.of(context)
@@ -331,10 +325,10 @@ class _ReviewCashSheetState extends State<_ReviewCashSheet> {
 }
 
 // ---------------------------------------------------------------------------
-// 2. QR: "Review deposit" checklist
+// QR: "Review deposit" checklist
 // ---------------------------------------------------------------------------
 
-Future<bool?> showApproveDepositSheet(
+Future<bool?> showApprovePaymentSheet(
   BuildContext context, {
   required PaymentReview payment,
 }) {
@@ -342,19 +336,19 @@ Future<bool?> showApproveDepositSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => _ApproveDepositSheet(payment: payment),
+    builder: (_) => _ApprovePaymentSheet(payment: payment),
   );
 }
 
-class _ApproveDepositSheet extends StatefulWidget {
-  const _ApproveDepositSheet({required this.payment});
+class _ApprovePaymentSheet extends StatefulWidget {
+  const _ApprovePaymentSheet({required this.payment});
   final PaymentReview payment;
 
   @override
-  State<_ApproveDepositSheet> createState() => _ApproveDepositSheetState();
+  State<_ApprovePaymentSheet> createState() => _ApprovePaymentSheetState();
 }
 
-class _ApproveDepositSheetState extends State<_ApproveDepositSheet> {
+class _ApprovePaymentSheetState extends State<_ApprovePaymentSheet> {
   bool _amountOk = false;
   bool _refOk = false;
   bool _payeeOk = false;
@@ -377,11 +371,11 @@ class _ApproveDepositSheetState extends State<_ApproveDepositSheet> {
       );
     }
 
-    return _SheetFrame(
-      title: 'Review deposit',
+    return SheetFrame(
+      title: 'Review ${p.stageWord}',
       subtitle:
           '${p.customerName} · ${p.bookingRef} · '
-          'Deposit ${formatRm(p.depositAmount)} · ${p.methodLabel}',
+          '${p.stageLabel} ${formatRm(p.amount)} · QR Code',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -413,9 +407,7 @@ class _ApproveDepositSheetState extends State<_ApproveDepositSheet> {
           ),
           const SizedBox(height: 16),
           _SheetButtons(
-            confirmLabel: 'Approve balance',
-            confirmColor: DesignTokens.studioYellow,
-            confirmTextColor: _dark,
+            confirmLabel: 'Approve ${p.stageWord}',
             onConfirm: allChecked
                 ? () => Navigator.of(context).pop(true)
                 : null,
@@ -427,7 +419,7 @@ class _ApproveDepositSheetState extends State<_ApproveDepositSheet> {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Reject balance
+// Reject deposit / balance (QR and cash)
 // ---------------------------------------------------------------------------
 
 Future<({String reason, String note})?> showRejectSheet(
@@ -464,7 +456,7 @@ class _RejectSheetState extends State<_RejectSheet> {
   );
 
   String _template(String reason) {
-    final amount = formatRm(widget.payment.depositAmount);
+    final amount = formatRm(widget.payment.amount);
     switch (reason) {
       case 'Amount mismatch':
         return 'The receipt amount doesn’t match $amount. '
@@ -489,11 +481,11 @@ class _RejectSheetState extends State<_RejectSheet> {
   Widget build(BuildContext context) {
     final p = widget.payment;
 
-    return _SheetFrame(
-      title: 'Reject balance',
+    return SheetFrame(
+      title: 'Reject ${p.stageWord}',
       subtitle:
           '${p.customerName} · ${p.bookingRef} · '
-          'Deposit ${formatRm(p.depositAmount)}',
+          '${p.stageLabel} ${formatRm(p.amount)}',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -544,8 +536,8 @@ class _RejectSheetState extends State<_RejectSheet> {
           _InfoBox(
             color: const Color(0xFFFDE8E6),
             text:
-                'Deposit status becomes Rejected. '
-                'The customer gets this note via the app.',
+                '${p.stageLabel} status becomes Rejected. '
+                'The customer gets this note via the app',
           ),
           const SizedBox(height: 16),
           Row(
@@ -558,12 +550,12 @@ class _RejectSheetState extends State<_RejectSheet> {
                         Navigator.of(context)
                             .pop((reason: _reason, note: _note.text.trim())),
                     style: FilledButton.styleFrom(
-                      backgroundColor: _red,
+                      backgroundColor: paymentRed,
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text(
-                      'Reject balance',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    child: Text(
+                      'Reject ${p.stageWord}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
