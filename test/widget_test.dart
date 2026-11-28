@@ -20,7 +20,6 @@ import 'package:pbs_pawsitivecode/features/customer/customer_home_screen.dart';
 import 'package:pbs_pawsitivecode/features/customer/customer_profile_screen.dart';
 import 'package:pbs_pawsitivecode/features/customer/customer_app_shell.dart';
 import 'package:pbs_pawsitivecode/theme/design_tokens.dart';
-import 'package:pbs_pawsitivecode/features/admin/admin_dashboard_screen.dart';
 
 AuthState signedInAdmin() => AuthState()..signInAs(AuthRole.admin);
 AuthState signedInCustomer() => AuthState()..signInAs(AuthRole.customer);
@@ -239,21 +238,9 @@ void main() {
     expect(find.text('Graduation'), findsOneWidget);
     expect(find.text('Wedding'), findsOneWidget);
 
-    final scheduleButton = find.text('See full schedule');
-    final dashboardScrollable = find
-        .descendant(
-          of: find.byType(AdminDashboardScreen),
-          matching: find.byType(Scrollable),
-        )
-        .first;
-
-    await tester.tap(scheduleButton);
-    await tester.pumpAndSettle();
-
-    await tester.tap(scheduleButton);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Today’s schedule'), findsOneWidget);
+    await tester.ensureVisible(find.text('See full schedule'));
+    await tester.tap(find.text('See full schedule'));
+    expect(scheduleTapped, isTrue);
   });
 
   testWidgets('admin dashboard metrics expand on wide screens', (tester) async {
