@@ -2,313 +2,250 @@ import 'package:flutter/material.dart';
 
 import '../../core/widgets/back_navigation.dart';
 import '../../theme/design_tokens.dart';
+import 'admin_filter.dart';
+import 'models/admin_booking.dart';
 import 'models/payment_review.dart';
+import 'admin_payment_status_pill.dart';
 
-enum BookingStatus {
-  pendingVerification,
-  confirmed,
-  unpaid,
-  rejected,
-  cancelled,
-}
-
-@immutable
-class AdminBooking {
-  const AdminBooking({
-    required this.customerName,
-    required this.sessionType,
-    required this.status,
-    required this.dateTime,
-    required this.method,
-    required this.sortKey,
-    this.ref = 'BBS-261212-014',
-  });
-
-  final String customerName;
-  final String sessionType;
-  final BookingStatus status;
-  final String dateTime;
-  final PaymentMethod method;
-  final String ref;
-
-  /// yyyymmddNN, used only for "Sort: Newest / Oldest".
-  final int sortKey;
-
-  /// Converts this booking into the data the booking detail screen needs.
-  PaymentReview toPaymentReview() {
-    late final PaymentStatus paymentStatus;
-    switch (status) {
-      case BookingStatus.pendingVerification:
-        paymentStatus = PaymentStatus.pendingVerification;
-      case BookingStatus.confirmed:
-        paymentStatus = PaymentStatus.paid;
-      case BookingStatus.rejected:
-        paymentStatus = PaymentStatus.rejected;
-      case BookingStatus.unpaid:
-      case BookingStatus.cancelled:
-        paymentStatus = PaymentStatus.unpaid;
-    }
-    return PaymentReview(
-      bookingRef: ref,
-      customerName: customerName,
-      email: 'xxxxx@gmail.com',
-      method: method,
-      amount: 1400,
-      status: paymentStatus,
-      receiptUploadedAt: method == PaymentMethod.qrCode
-          ? DateTime(2026, 11, 24, 15, 42)
-          : null,
-    );
-  }
-}
-
-const sampleAdminBookings = [
-  AdminBooking(
-    customerName: 'Fong',
-    sessionType: 'Wedding Photo',
-    status: BookingStatus.pendingVerification,
-    dateTime: '30 August 2026 · 10:00 AM',
-    method: PaymentMethod.qrCode,
-    sortKey: 2026083001,
-  ),
-  AdminBooking(
-    customerName: 'Dayang',
-    sessionType: 'Wedding Photo',
-    status: BookingStatus.confirmed,
-    dateTime: '26 August 2026 · 10:00 AM',
-    method: PaymentMethod.qrCode,
-    sortKey: 2026082603,
-  ),
-  AdminBooking(
-    customerName: 'Umang',
-    sessionType: 'Wedding Photo',
-    status: BookingStatus.unpaid,
-    dateTime: '26 August 2026 · 10:00 AM',
-    method: PaymentMethod.cash,
-    sortKey: 2026082602,
-  ),
-  AdminBooking(
-    customerName: 'Ros',
-    sessionType: 'Wedding Photo',
-    status: BookingStatus.rejected,
-    dateTime: '26 August 2026 · 10:00 AM',
-    method: PaymentMethod.cash,
-    sortKey: 2026082601,
-  ),
-];
+export 'models/admin_booking.dart';
 
 class AdminBookingsScreen extends StatefulWidget {
   const AdminBookingsScreen({
     super.key,
-    this.bookings = sampleAdminBookings,
-    this.totalCount,
+    this.store,
     this.onBookingSelected,
+    this.onPaymentSelected,
   });
 
-  final List<AdminBooking> bookings;
+  final BookingStore? store;
 
-  /// Total bookings in the system (for "Showing x of y"). Defaults to the
-  /// length of [bookings].
-  final int? totalCount;
+  /// "See details": opens the payment that needs attention.
   final ValueChanged<AdminBooking>? onBookingSelected;
+
+  /// Tap on the Deposit or Balance row.
+  final ValueChanged<PaymentReview>? onPaymentSelected;
 
   @override
   State<AdminBookingsScreen> createState() => _AdminBookingsScreenState();
 }
 
 class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
-  final _searchController = TextEditingController();
-  BookingStatus? _status;
+  final _search = TextEditingController();
+  PaymentStage? _stage;
+  PaymentStatus? _status;
   PaymentMethod? _method;
-  bool _newestFirst = true;
+  BookingSort _sort = BookingSort.newest;
 
-  static const _statusFilters = [
+  static const _statusChips = <(PaymentStatus?, String)>[
     (null, 'All'),
-    (BookingStatus.pendingVerification, 'Pending verification'),
-    (BookingStatus.unpaid, 'Unpaid'),
-    (BookingStatus.rejected, 'Rejected'),
-    (BookingStatus.cancelled, 'Cancelled'),
+    (PaymentStatus.pendingVerification, 'Pending verification'),
+    (PaymentStatus.unpaid, 'Unpaid'),
+    (PaymentStatus.paid, 'Paid'),
+    (PaymentStatus.rejected, 'Rejected'),
+    (PaymentStatus.cancelled, 'Cancelled'),
   ];
+
+  BookingStore get _store => widget.store ?? bookingStore;
 
   @override
   void dispose() {
-    _searchController.dispose();
+    _search.dispose();
     super.dispose();
   }
 
-  List<AdminBooking> get _visible {
-    final query = _searchController.text.trim().toLowerCase();
-    final list = widget.bookings.where((b) {
-      if (_status != null && b.status != _status) return false;
-      if (_method != null && b.method != _method) return false;
+  List<AdminBooking> _visible(List<AdminBooking> all) {
+    final query = _search.text.trim().toLowerCase();
+    final list = all.where((b) {
+      final parts = _stage == null
+          ? [b.deposit, b.balance]
+          : [b.paymentFor(_stage!)];
+      if (_status != null && !parts.any((p) => p.status == _status)) {
+        return false;
+      }
+      if (_method != null && !parts.any((p) => p.method == _method)) {
+        return false;
+      }
       if (query.isNotEmpty &&
           !b.customerName.toLowerCase().contains(query) &&
-          !b.ref.toLowerCase().contains(query)) {
+          !b.ref.toLowerCase().contains(query) &&
+          !b.packageName.toLowerCase().contains(query)) {
         return false;
       }
       return true;
     }).toList();
-    list.sort(
-      (a, b) => _newestFirst
-          ? b.sortKey.compareTo(a.sortKey)
-          : a.sortKey.compareTo(b.sortKey),
-    );
+
+    list.sort((a, b) {
+      switch (_sort) {
+        case BookingSort.newest:
+          return b.sortKey.compareTo(a.sortKey);
+        case BookingSort.oldest:
+          return a.sortKey.compareTo(b.sortKey);
+        case BookingSort.balanceDue:
+          return a.dueKey.compareTo(b.dueKey);
+        case BookingSort.amountHighToLow:
+          return b.total.compareTo(a.total);
+      }
+    });
     return list;
   }
 
-  void _resetFilters() {
+  Future<void> _openFilters() async {
+    final result = await showBookingFilterSheet(
+      context,
+      initial: (stage: _stage, status: _status, method: _method, sort: _sort),
+    );
+    if (result == null || !mounted) return;
     setState(() {
-      _searchController.clear();
-      _status = null;
-      _method = null;
-      _newestFirst = true;
+      _stage = result.stage;
+      _status = result.status;
+      _method = result.method;
+      _sort = result.sort;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final visible = _visible;
-    final total = widget.totalCount ?? widget.bookings.length;
+    return ListenableBuilder(
+      listenable: _store,
+      builder: (context, _) {
+        final all = _store.bookings;
+        final visible = _visible(all);
 
-    return Scaffold(
-      backgroundColor: DesignTokens.background,
-      body: SafeArea(
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1000),
-            child: ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                const ScreenHeader(
-                  title: 'Booking',
-                  fallbackLocation: '/admin/dashboard',
-                ),
-                const SizedBox(height: 24),
-                _SearchField(
-                  controller: _searchController,
-                  onChanged: (_) => setState(() {}),
-                  onClear: () => setState(_searchController.clear),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 40,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      for (final (status, label) in _statusFilters) ...[
-                        _FilterChip(
-                          label: label,
-                          selected: _status == status,
-                          onSelected: () => setState(() => _status = status),
-                        ),
-                        const SizedBox(width: 10),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
+        return Scaffold(
+          backgroundColor: DesignTokens.background,
+          body: SafeArea(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1000),
+                child: ListView(
+                  padding: const EdgeInsets.all(24),
                   children: [
-                    Expanded(
-                      child: _DropdownBox<PaymentMethod?>(
-                        value: _method,
-                        items: const [
-                          DropdownMenuItem(
-                            value: null,
-                            child: Text('Method: All'),
-                          ),
-                          DropdownMenuItem(
-                            value: PaymentMethod.cash,
-                            child: Text('Method: Cash'),
-                          ),
-                          DropdownMenuItem(
-                            value: PaymentMethod.qrCode,
-                            child: Text('Method: QR Code'),
-                          ),
+                    const ScreenHeader(
+                      title: 'Booking',
+                      fallbackLocation: '/admin/dashboard',
+                    ),
+                    const SizedBox(height: 20),
+                    _SearchField(
+                      controller: _search,
+                      onChanged: (_) => setState(() {}),
+                      onClear: () => setState(_search.clear),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 40,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          for (final (status, label) in _statusChips) ...[
+                            _FilterChip(
+                              label: label,
+                              selected: _status == status,
+                              onSelected: () =>
+                                  setState(() => _status = status),
+                            ),
+                            const SizedBox(width: 10),
+                          ],
                         ],
-                        onChanged: (v) => setState(() => _method = v),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _DropdownBox<bool>(
-                        value: _newestFirst,
-                        items: const [
-                          DropdownMenuItem(
-                            value: true,
-                            child: Text('Sort: Newest'),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _DropdownBox<PaymentMethod?>(
+                            value: _method,
+                            items: const [
+                              DropdownMenuItem(
+                                value: null,
+                                child: Text('Method: All'),
+                              ),
+                              DropdownMenuItem(
+                                value: PaymentMethod.cash,
+                                child: Text('Method: Cash'),
+                              ),
+                              DropdownMenuItem(
+                                value: PaymentMethod.qrCode,
+                                child: Text('Method: QR Code'),
+                              ),
+                            ],
+                            onChanged: (v) => setState(() => _method = v),
                           ),
-                          DropdownMenuItem(
-                            value: false,
-                            child: Text('Sort: Oldest'),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _DropdownBox<PaymentStage?>(
+                            value: _stage,
+                            items: const [
+                              DropdownMenuItem(
+                                value: null,
+                                child: Text('Stage: All'),
+                              ),
+                              DropdownMenuItem(
+                                value: PaymentStage.deposit,
+                                child: Text('Stage: Deposit'),
+                              ),
+                              DropdownMenuItem(
+                                value: PaymentStage.balance,
+                                child: Text('Stage: Balance'),
+                              ),
+                            ],
+                            onChanged: (v) => setState(() => _stage = v),
                           ),
-                        ],
-                        onChanged: (v) =>
-                            setState(() => _newestFirst = v ?? true),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Tooltip(
-                      message: 'Reset filters',
-                      child: Material(
-                        color: DesignTokens.studioYellow,
-                        borderRadius: BorderRadius.circular(16),
-                        child: InkWell(
-                          onTap: _resetFilters,
-                          borderRadius: BorderRadius.circular(16),
-                          child: const SizedBox(
-                            width: 52,
-                            height: 52,
-                            child: Icon(
-                              Icons.filter_alt_outlined,
-                              color: DesignTokens.cardText,
+                        ),
+                        const SizedBox(width: 12),
+                        Tooltip(
+                          message: 'Filter & sort',
+                          child: Material(
+                            color: DesignTokens.studioYellow,
+                            borderRadius: BorderRadius.circular(16),
+                            child: InkWell(
+                              onTap: _openFilters,
+                              borderRadius: BorderRadius.circular(16),
+                              child: const SizedBox(
+                                width: 52,
+                                height: 52,
+                                child: Icon(
+                                  Icons.filter_alt_outlined,
+                                  color: DesignTokens.cardText,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Showing ${visible.length} of ${all.length} bookings',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    if (visible.isEmpty)
+                      const Card(
+                        color: Colors.white,
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text(
+                            'No bookings match your filters.',
+                            style: TextStyle(color: DesignTokens.cardText),
+                          ),
+                        ),
+                      )
+                    else
+                      for (final booking in visible)
+                        _BookingCard(
+                          booking: booking,
+                          onSelected: widget.onBookingSelected,
+                          onPaymentSelected: widget.onPaymentSelected,
+                        ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  'Showing ${visible.length} of $total bookings',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 12),
-                if (visible.isEmpty)
-                  const Card(
-                    color: Colors.white,
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Text(
-                        'No bookings match your filters.',
-                        style: TextStyle(color: DesignTokens.cardText),
-                      ),
-                    ),
-                  )
-                else
-                  Card(
-                    color: Colors.white,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        children: [
-                          for (var i = 0; i < visible.length; i++)
-                            _BookingListItem(
-                              booking: visible[i],
-                              onSelected: widget.onBookingSelected,
-                              showDivider: i < visible.length - 1,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -441,162 +378,149 @@ class _DropdownBox<T> extends StatelessWidget {
   }
 }
 
-class _BookingListItem extends StatelessWidget {
-  const _BookingListItem({
+class _BookingCard extends StatelessWidget {
+  const _BookingCard({
     required this.booking,
     required this.onSelected,
-    required this.showDivider,
+    required this.onPaymentSelected,
   });
 
   final AdminBooking booking;
   final ValueChanged<AdminBooking>? onSelected;
-  final bool showDivider;
+  final ValueChanged<PaymentReview>? onPaymentSelected;
 
   @override
   Widget build(BuildContext context) {
-    final isQr = booking.method == PaymentMethod.qrCode;
+    final deposit = booking.deposit;
+    final balance = booking.balance;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 18),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      booking.customerName,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: DesignTokens.cardText,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      booking.sessionType,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF858585),
-                        fontSize: 15,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              _StatusChip(status: booking.status),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        _BookingInfoRow(
-          icon: Icons.calendar_month_outlined,
-          text: booking.dateTime,
-        ),
-        const SizedBox(height: 8),
-        _BookingInfoRow(
-          icon: isQr ? Icons.qr_code_2 : Icons.payments_outlined,
-          text: isQr ? 'QR Code' : 'Cash',
-        ),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton.icon(
-            onPressed: () => onSelected?.call(booking),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF858585),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              visualDensity: VisualDensity.compact,
-            ),
-            iconAlignment: IconAlignment.end,
-            icon: const Icon(Icons.chevron_right, size: 22),
-            label: const Text('See details'),
-          ),
-        ),
-        if (showDivider) const Divider(height: 1, color: Color(0xFFE0E0E0)),
-        if (!showDivider) const SizedBox(height: 4),
-      ],
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.status});
-
-  final BookingStatus status;
-
-  @override
-  Widget build(BuildContext context) {
-    late final String label;
-    late final Color bg;
-    late final Color fg;
-    switch (status) {
-      case BookingStatus.pendingVerification:
-        label = 'Pending verification';
-        bg = DesignTokens.studioYellow;
-        fg = DesignTokens.cardText;
-      case BookingStatus.confirmed:
-        label = 'Confirmed';
-        bg = DesignTokens.confirmedGreen;
-        fg = Colors.white;
-      case BookingStatus.unpaid:
-        label = 'Unpaid';
-        bg = const Color(0xFFC0392B);
-        fg = Colors.white;
-      case BookingStatus.rejected:
-        label = 'Rejected';
-        bg = const Color(0xFFC0392B);
-        fg = Colors.white;
-      case BookingStatus.cancelled:
-        label = 'Cancelled';
-        bg = const Color(0xFF757575);
-        fg = Colors.white;
-    }
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(999),
-      ),
+    return Card(
+      color: Colors.white,
+      margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: fg,
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-          ),
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    booking.customerName,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: DesignTokens.cardText,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Text(
+                  booking.dateLabel,
+                  style: const TextStyle(color: Color(0xFF858585)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${booking.packageName} · ${formatRm(booking.total)}',
+              style: const TextStyle(color: Color(0xFF858585), fontSize: 15),
+            ),
+            const Divider(height: 24, color: Color(0xFFE0E0E0)),
+            _PaymentRow(
+              payment: deposit,
+              subtitle: deposit.method == PaymentMethod.qrCode ? 'QR' : 'Cash',
+              onTap: () => onPaymentSelected?.call(deposit),
+            ),
+            const SizedBox(height: 4),
+            _PaymentRow(
+              payment: balance,
+              subtitle: 'due ${booking.balanceDue}',
+              locked: booking.balanceLocked,
+              onTap: booking.balanceLocked
+                  ? null
+                  : () => onPaymentSelected?.call(balance),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => onSelected?.call(booking),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF858585),
+                  visualDensity: VisualDensity.compact,
+                ),
+                iconAlignment: IconAlignment.end,
+                icon: const Icon(Icons.chevron_right, size: 22),
+                label: const Text('See details'),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _BookingInfoRow extends StatelessWidget {
-  const _BookingInfoRow({required this.icon, required this.text});
+class _PaymentRow extends StatelessWidget {
+  const _PaymentRow({
+    required this.payment,
+    required this.subtitle,
+    required this.onTap,
+    this.locked = false,
+  });
 
-  final IconData icon;
-  final String text;
+  final PaymentReview payment;
+  final String subtitle;
+  final VoidCallback? onTap;
+  final bool locked;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 22, color: const Color(0xFFB0B0B0)),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: const Color(0xFFB0B0B0), fontSize: 14),
-          ),
+    final showIcon = payment.stage == PaymentStage.deposit || !locked;
+    final isQr = payment.method == PaymentMethod.qrCode;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Expanded(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 2,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  if (showIcon)
+                    Icon(
+                      isQr ? Icons.qr_code_2 : Icons.payments_outlined,
+                      size: 22,
+                      color: DesignTokens.cardText,
+                    ),
+                  Text(
+                    '${payment.stageLabel} ${formatRm(payment.amount)}',
+                    style: const TextStyle(
+                      color: DesignTokens.cardText,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(color: Color(0xFF858585)),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            PaymentStatusPill(
+              status: payment.status,
+              small: true,
+              locked: locked,
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
